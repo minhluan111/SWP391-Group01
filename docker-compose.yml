@@ -1,0 +1,16 @@
+version: '3.8'
+
+services:
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: smart_parking_db
+    environment:
+      - ACCEPT_EULA=Y
+      - MSSQL_SA_PASSWORD=ParkingAdmin123
+    ports:
+      - "1434:1433"
+    volumes:
+      - sqlserver_data:/var/opt/mssql
+
+volumes:
+  sqlserver_data:
