@@ -1,9 +1,51 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
+  const [formData, setFormData] = useState({
+    full_name: '',
+    phone: '',
+    email: '',
+    password: '',
+    confirm_password: ''
+  });
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.full_name || !formData.email || !formData.password) {
+      toast.error('Vui lòng điền đủ họ tên, email và mật khẩu');
+      return;
+    }
+    if (formData.password !== formData.confirm_password) {
+      toast.error('Mật khẩu nhập lại không khớp');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/register', formData);
+      toast.success('Đăng ký thành công!');
+      login(response.data.token, response.data.user);
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Đăng ký thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -76,46 +118,21 @@ export default function Register() {
             <p className="text-gray-500">Tạo tài khoản mới để sử dụng hệ thống</p>
           </div>
 
-          <form className="space-y-5">
+          <form className="space-y-5" onSubmit={handleRegister}>
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Họ và tên</label>
-                <input type="text" placeholder="Nhập họ và tên..." className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                <input name="full_name" value={formData.full_name} onChange={handleChange} type="text" placeholder="Nhập họ và tên..." className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
               </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Số điện thoại</label>
-                <input type="tel" placeholder="Nhập số điện thoại..." className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
+                <input name="phone" value={formData.phone} onChange={handleChange} type="tel" placeholder="Nhập số điện thoại..." className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
               </div>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Giới tính</label>
-                <select className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white">
-                  <option value="">Chọn giới tính</option>
-                  <option value="male">Nam</option>
-                  <option value="female">Nữ</option>
-                </select>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Ngày sinh</label>
-                <input type="date" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Biển số xe</label>
-                <input type="text" placeholder="VD: 51H-123.45" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Loại phương tiện</label>
-                <select className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 bg-white">
-                  <option value="">Chọn loại xe</option>
-                  <option value="car">Ô tô</option>
-                  <option value="motorbike">Xe máy</option>
-                </select>
-              </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+              <input name="email" value={formData.email} onChange={handleChange} type="email" placeholder="example@gmail.com" className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500" />
             </div>
 
             <div className="grid grid-cols-2 gap-4">
@@ -123,6 +140,7 @@ export default function Register() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Mật khẩu</label>
                 <div className="relative">
                   <input 
+                    name="password" value={formData.password} onChange={handleChange}
                     type={showPassword ? 'text' : 'password'} 
                     placeholder="********" 
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -133,6 +151,7 @@ export default function Register() {
                 <label className="block text-sm font-medium text-gray-700 mb-1">Nhập lại mật khẩu</label>
                 <div className="relative">
                   <input 
+                    name="confirm_password" value={formData.confirm_password} onChange={handleChange}
                     type={showPassword ? 'text' : 'password'} 
                     placeholder="********" 
                     className="w-full px-4 py-2.5 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500"
@@ -150,16 +169,11 @@ export default function Register() {
             
             <p className="text-xs text-gray-500 flex items-center gap-1">
               <span className="w-3 h-3 inline-block rounded-full border border-gray-400 text-center leading-3 text-[8px]">i</span>
-              Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ và số
+              Mật khẩu phải có ít nhất 6 ký tự
             </p>
 
-            <label className="flex items-start gap-2 cursor-pointer mt-4">
-              <input type="checkbox" className="w-4 h-4 mt-0.5 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
-              <span className="text-sm text-gray-600">Tôi đồng ý với <a href="#" className="font-medium text-primary-600">Điều khoản sử dụng</a> và <a href="#" className="font-medium text-primary-600">Chính sách bảo mật</a></span>
-            </label>
-
-            <button type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors mt-6">
-              Tạo tài khoản
+            <button disabled={loading} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors mt-6 disabled:opacity-50">
+              {loading ? 'Đang xử lý...' : 'Tạo tài khoản'}
             </button>
           </form>
 

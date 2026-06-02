@@ -1,9 +1,43 @@
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
+import toast from 'react-hot-toast';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
+  
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!email || !password) {
+      toast.error('Vui lòng nhập đầy đủ email và mật khẩu');
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      toast.success('Đăng nhập thành công!');
+      login(response.data.token, response.data.user);
+      navigate('/');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fillDemo = (roleEmail: string) => {
+    setEmail(roleEmail);
+    setPassword('123456'); // assuming a default password for demo purposes if they have it
+  };
 
   return (
     <div className="min-h-screen flex">
@@ -68,12 +102,14 @@ export default function Login() {
             <p className="text-gray-500">Chào mừng quay trở lại hệ thống quản lý.</p>
           </div>
 
-          <form className="space-y-6">
+          <form className="space-y-6" onSubmit={handleLogin}>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Số điện thoại</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
               <input 
-                type="tel" 
-                placeholder="Nhập số điện thoại" 
+                type="email" 
+                placeholder="Nhập email" 
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
               />
             </div>
@@ -84,6 +120,8 @@ export default function Login() {
                 <input 
                   type={showPassword ? 'text' : 'password'} 
                   placeholder="Nhập mật khẩu" 
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
                 />
                 <button 
@@ -104,8 +142,8 @@ export default function Login() {
               <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-700">Quên mật khẩu?</a>
             </div>
 
-            <button type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors">
-              Đăng nhập
+            <button disabled={loading} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
+              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
             </button>
           </form>
 
@@ -132,23 +170,15 @@ export default function Login() {
           </p>
 
           <div className="mt-12">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tài khoản demo</p>
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tài khoản demo (Điền thử)</p>
             <div className="grid grid-cols-2 gap-4">
-              <div className="p-3 border border-gray-200 rounded-lg text-xs">
+              <div onClick={() => fillDemo('user@gmail.com')} className="p-3 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
                 <div className="font-semibold text-gray-700">Người dùng</div>
                 <div className="text-gray-500">user@gmail.com</div>
               </div>
-              <div className="p-3 border border-gray-200 rounded-lg text-xs">
+              <div onClick={() => fillDemo('staff@gmail.com')} className="p-3 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
                 <div className="font-semibold text-gray-700">Nhân viên</div>
                 <div className="text-gray-500">staff@gmail.com</div>
-              </div>
-              <div className="p-3 border border-gray-200 rounded-lg text-xs">
-                <div className="font-semibold text-gray-700">Quản lý</div>
-                <div className="text-gray-500">manager@gmail.com</div>
-              </div>
-              <div className="p-3 border border-gray-200 rounded-lg text-xs">
-                <div className="font-semibold text-gray-700">Quản trị viên</div>
-                <div className="text-gray-500">admin@gmail.com</div>
               </div>
             </div>
           </div>
