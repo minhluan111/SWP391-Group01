@@ -44,6 +44,9 @@ app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerDocs));
 app.use('/api/auth', require('./routes/authRoutes'));
 app.use('/api/slots', require('./routes/slotRoutes'));
 app.use('/api/pricing', require('./routes/pricingRoutes'));
+app.use('/api/vehicles', require('./routes/vehicleRoutes'));
+app.use('/api/reservations', require('./routes/reservationRoutes'));
+app.use('/api/sessions', require('./routes/sessionRoutes'));
 
 // Basic route
 app.get('/', (req, res) => {

@@ -35,12 +35,12 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             {isAuthenticated && user ? (
               <div className="flex items-center gap-4">
-                <div className="flex items-center gap-2 text-sm font-medium text-gray-700">
+                <Link to="/profile" className="flex items-center gap-2 text-sm font-medium text-gray-700 hover:text-primary-600 transition-colors">
                   <div className="bg-primary-100 text-primary-700 p-1.5 rounded-full">
                     <UserIcon className="w-4 h-4" />
                   </div>
                   {user.full_name}
-                </div>
+                </Link>
                 <button 
                   onClick={handleLogout}
                   className="flex items-center gap-1 text-sm font-medium text-red-600 hover:text-red-700 transition-colors"

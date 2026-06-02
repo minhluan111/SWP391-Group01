@@ -109,7 +109,46 @@ const login = async (req, res) => {
     }
 };
 
+const updateProfile = async (req, res) => {
+    try {
+        const { full_name, phone } = req.body;
+        const user_id = req.user.id;
+        const pool = await poolPromise;
+
+        await pool.request()
+            .input('full_name', sql.NVarChar, full_name)
+            .input('phone', sql.VarChar, phone)
+            .input('user_id', sql.Int, user_id)
+            .query('UPDATE users SET full_name = @full_name, phone = @phone WHERE id = @user_id');
+
+        const result = await pool.request()
+            .input('user_id', sql.Int, user_id)
+            .query('SELECT id, full_name, email, phone FROM users WHERE id = @user_id');
+
+        res.json({ success: true, message: 'Cập nhật hồ sơ thành công', user: result.recordset[0] });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};
+
+const getProfile = async (req, res) => {
+    try {
+        const user_id = req.user.id;
+        const pool = await poolPromise;
+        const result = await pool.request()
+            .input('user_id', sql.Int, user_id)
+            .query('SELECT id, full_name, email, phone FROM users WHERE id = @user_id');
+
+        res.json({ success: true, user: result.recordset[0] });
+    } catch (err) {
+        res.status(500).json({ success: false, message: 'Lỗi server' });
+    }
+};
+
 module.exports = {
     register,
-    login
+    login,
+    updateProfile,
+    getProfile
 };
