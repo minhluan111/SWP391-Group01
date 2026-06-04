@@ -47,6 +47,8 @@ app.use('/api/pricing', require('./routes/pricingRoutes'));
 app.use('/api/vehicles', require('./routes/vehicleRoutes'));
 app.use('/api/reservations', require('./routes/reservationRoutes'));
 app.use('/api/sessions', require('./routes/sessionRoutes'));
+app.use('/api/admin', require('./routes/adminRoutes'));
+app.use('/api/manager', require('./routes/managerRoutes'));
 
 // Basic route
 app.get('/', (req, res) => {

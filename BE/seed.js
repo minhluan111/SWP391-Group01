@@ -10,7 +10,8 @@ async function seed() {
         const users = [
             { full_name: 'Admin User', email: 'admin@gmail.com', phone: '0123456789' },
             { full_name: 'Staff User', email: 'staff@gmail.com', phone: '0987654321' },
-            { full_name: 'Customer User', email: 'customer@gmail.com', phone: '0111222333' }
+            { full_name: 'Customer User', email: 'customer@gmail.com', phone: '0111222333' },
+            { full_name: 'Manager User', email: 'manager@gmail.com', phone: '0555666777' }
         ];
 
         let customerId = null;
@@ -40,12 +41,14 @@ async function seed() {
         const adminRole = roles.recordset.find(r => r.role_name === 'Admin')?.id;
         const staffRole = roles.recordset.find(r => r.role_name === 'Staff')?.id;
         const customerRole = roles.recordset.find(r => r.role_name === 'Customer')?.id;
+        const managerRole = roles.recordset.find(r => r.role_name === 'Manager')?.id;
 
         const allUsers = await pool.request().query('SELECT id, email FROM users');
         for (const user of allUsers.recordset) {
             let roleId = customerRole;
             if (user.email === 'admin@gmail.com') roleId = adminRole;
             if (user.email === 'staff@gmail.com') roleId = staffRole;
+            if (user.email === 'manager@gmail.com') roleId = managerRole;
 
             const checkRole = await pool.request()
                 .input('user_id', sql.Int, user.id)

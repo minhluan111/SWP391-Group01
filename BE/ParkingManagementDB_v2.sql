@@ -20,6 +20,8 @@ CREATE TABLE users (
     password_hash VARCHAR(255) NOT NULL,
     phone VARCHAR(20),
     is_active BIT DEFAULT 1, 
+    reset_code VARCHAR(10) NULL,
+    reset_expires DATETIME NULL,
     created_at DATETIME DEFAULT GETDATE()
 );
 
@@ -137,16 +139,16 @@ GO
 ----------------------------------------------------
 -- DỮ LIỆU MẪU CHUẨN ĐỂ ĐỒNG BỘ KHI CODE
 ----------------------------------------------------
-INSERT INTO roles (role_name) VALUES ('Admin'), ('Customer'), ('Staff');
+INSERT INTO roles (role_name) VALUES ('Admin'), ('Customer'), ('Staff'), ('Manager');
 
-INSERT INTO floors (floor_name, vehicle_type) VALUES (N'Tầng 1 - Ô tô', 'car'), (N'Tầng 2 - Xe máy', 'motorbike');
+INSERT INTO floors (floor_name, vehicle_type) VALUES (N'Tầng 1 - Xe máy', 'motorbike'), (N'Tầng 2 - Ô tô', 'car');
 
 -- Thêm sẵn vài Slots mẫu để test API lấy danh sách vị trí
 INSERT INTO parking_slots (floor_id, slot_code, vehicle_type, status) VALUES 
-(1, 'A-01', 'car', 'available'),
-(1, 'A-02', 'car', 'available'),
-(2, 'B-01', 'motorbike', 'available'),
-(2, 'B-02', 'motorbike', 'available');
+(1, 'B-01', 'motorbike', 'available'),
+(1, 'B-02', 'motorbike', 'available'),
+(2, 'A-01', 'car', 'available'),
+(2, 'A-02', 'car', 'available');
 
 INSERT INTO pricing_rules (vehicle_type, pricing_period, hourly_rate) VALUES 
 ('car', 'weekday_day', 20000.00),

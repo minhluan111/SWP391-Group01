@@ -139,7 +139,7 @@ export default function Login() {
                 <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
                 <span className="text-sm text-gray-600">Ghi nhớ đăng nhập</span>
               </label>
-              <a href="#" className="text-sm font-medium text-primary-600 hover:text-primary-700">Quên mật khẩu?</a>
+              <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-700">Quên mật khẩu?</Link>
             </div>
 
             <button disabled={loading} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
@@ -169,16 +169,24 @@ export default function Login() {
             Chưa có tài khoản? <Link to="/register" className="font-medium text-primary-600 hover:text-primary-700">Đăng ký ngay</Link>
           </p>
 
-          <div className="mt-12">
-            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-4">Tài khoản demo (Điền thử)</p>
-            <div className="grid grid-cols-2 gap-4">
-              <div onClick={() => fillDemo('user@gmail.com')} className="p-3 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
-                <div className="font-semibold text-gray-700">Người dùng</div>
-                <div className="text-gray-500">user@gmail.com</div>
+          <div className="mt-8">
+            <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Tài khoản demo để kiểm thử</p>
+            <div className="grid grid-cols-2 gap-2">
+              <div onClick={() => fillDemo('customer@gmail.com')} className="p-2 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
+                <div className="font-semibold text-gray-700">Khách hàng</div>
+                <div className="text-gray-500">customer@gmail.com</div>
               </div>
-              <div onClick={() => fillDemo('staff@gmail.com')} className="p-3 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
-                <div className="font-semibold text-gray-700">Nhân viên</div>
+              <div onClick={() => fillDemo('staff@gmail.com')} className="p-2 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
+                <div className="font-semibold text-gray-700">Nhân viên (Staff)</div>
                 <div className="text-gray-500">staff@gmail.com</div>
+              </div>
+              <div onClick={() => fillDemo('manager@gmail.com')} className="p-2 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
+                <div className="font-semibold text-gray-700">Quản lý (Manager)</div>
+                <div className="text-gray-500">manager@gmail.com</div>
+              </div>
+              <div onClick={() => fillDemo('admin@gmail.com')} className="p-2 border border-gray-200 rounded-lg text-xs cursor-pointer hover:bg-gray-50">
+                <div className="font-semibold text-gray-700">Admin</div>
+                <div className="text-gray-500">admin@gmail.com</div>
               </div>
             </div>
           </div>

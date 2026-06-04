@@ -22,6 +22,12 @@ const { verifyToken } = require('../middlewares/authMiddleware');
  *                 type: integer
  *               slot_id:
  *                 type: integer
+ *               reservation_time:
+ *                 type: string
+ *                 format: date-time
+ *               expected_checkout_time:
+ *                 type: string
+ *                 format: date-time
  *     responses:
  *       200:
  *         description: Reservation created successfully

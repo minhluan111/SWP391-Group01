@@ -14,4 +14,18 @@ const verifyToken = (req, res, next) => {
     }
 };
 
-module.exports = { verifyToken };
+const requireRole = (roles) => {
+    return (req, res, next) => {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Không tìm thấy thông tin xác thực' });
+        }
+        const userRole = req.user.role;
+        const allowedRoles = Array.isArray(roles) ? roles : [roles];
+        if (!allowedRoles.includes(userRole)) {
+            return res.status(403).json({ message: 'Bạn không có quyền truy cập chức năng này' });
+        }
+        next();
+    };
+};
+
+module.exports = { verifyToken, requireRole };
