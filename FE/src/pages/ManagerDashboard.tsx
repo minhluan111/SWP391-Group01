@@ -1,7 +1,22 @@
-import { useState, useEffect } from 'react';
-import { Settings, DollarSign, BarChart3, TrendingUp, ShieldAlert, Award, RefreshCw, Car, ChevronRight, Save } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Settings, DollarSign, BarChart3, TrendingUp, RefreshCw, Car, Save } from 'lucide-react';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+  PieChart,
+  Pie,
+  Cell,
+  Legend,
+} from 'recharts';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+
+const CHART_COLORS = ['#6366f1', '#f59e0b', '#10b981', '#8b5cf6'];
 
 export default function ManagerDashboard() {
   const [activeTab, setActiveTab] = useState<'capacity' | 'pricing' | 'stats'>('stats');
@@ -106,7 +121,6 @@ export default function ManagerDashboard() {
     }
   };
 
-  // Helper translations
   const translatePeriod = (period: string) => {
     switch (period) {
       case 'weekday_day': return 'Ngày thường - Ban ngày (06:00 - 22:00)';
@@ -116,6 +130,39 @@ export default function ManagerDashboard() {
       default: return period;
     }
   };
+
+  const monthlyChartData = useMemo(() => {
+    if (!stats?.monthlyRevenue) return [];
+    return stats.monthlyRevenue.map((item: { month: string; total: string }) => ({
+      month: item.month,
+      revenue: parseFloat(item.total),
+    }));
+  }, [stats]);
+
+  const vehicleRevenueData = useMemo(() => {
+    if (!stats?.revenueByVehicle) return [];
+    return stats.revenueByVehicle.map((v: { vehicle_type: string; total: string }) => ({
+      name: v.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy',
+      value: parseFloat(v.total),
+    }));
+  }, [stats]);
+
+  const slotChartData = useMemo(() => {
+    if (!stats?.slotStats) return [];
+    const statusLabels: Record<string, string> = {
+      available: 'Trống',
+      occupied: 'Đang dùng',
+      reserved: 'Đã đặt',
+      maintenance: 'Bảo trì',
+    };
+    return stats.slotStats.map((s: { status: string; count: number }) => ({
+      name: statusLabels[s.status] || s.status,
+      value: s.count,
+    }));
+  }, [stats]);
+
+  const formatCurrency = (value: number) =>
+    `${value.toLocaleString('vi-VN')}đ`;
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
@@ -218,75 +265,86 @@ export default function ManagerDashboard() {
 
               </div>
 
-              {/* Data breakdowns */}
+              {/* Data breakdowns with Recharts */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                
-                {/* Revenue by vehicle type */}
+
+                {/* Revenue by vehicle type - PieChart */}
                 <div className="lg:col-span-1 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                  <h3 className="font-bold text-base mb-6 text-slate-200 border-b border-slate-800 pb-3">Phân tích theo loại xe</h3>
-                  <div className="space-y-5">
-                    {stats.revenueByVehicle.map((v: any) => {
-                      const total = parseFloat(v.total);
-                      const percent = stats.totalRevenue > 0 ? (total / stats.totalRevenue) * 100 : 0;
-                      return (
-                        <div key={v.vehicle_type} className="space-y-2">
-                          <div className="flex justify-between text-sm">
-                            <span className="capitalize font-semibold text-slate-300">
-                              {v.vehicle_type === 'car' ? '🚗 Ô tô' : '🏍️ Xe máy'}
-                            </span>
-                            <span className="font-bold text-slate-100">
-                              {parseInt(v.total).toLocaleString('vi-VN')}đ ({percent.toFixed(0)}%)
-                            </span>
-                          </div>
-                          <div className="w-full bg-slate-950 h-3 rounded-full overflow-hidden border border-slate-850">
-                            <div 
-                              className={`h-full rounded-full ${v.vehicle_type === 'car' ? 'bg-primary-500' : 'bg-amber-500'}`}
-                              style={{ width: `${percent}%` }}
-                            ></div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                    {stats.revenueByVehicle.length === 0 && (
-                      <p className="text-sm text-slate-500 text-center py-6">Chưa có dữ liệu phân tích doanh thu.</p>
-                    )}
-                  </div>
+                  <h3 className="font-bold text-base mb-4 text-slate-200 border-b border-slate-800 pb-3">Phân tích theo loại xe</h3>
+                  {vehicleRevenueData.length === 0 ? (
+                    <p className="text-sm text-slate-500 text-center py-12">Chưa có dữ liệu phân tích doanh thu.</p>
+                  ) : (
+                    <ResponsiveContainer width="100%" height={260}>
+                      <PieChart>
+                        <Pie
+                          data={vehicleRevenueData}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={55}
+                          outerRadius={90}
+                          paddingAngle={4}
+                          dataKey="value"
+                          label={({ name, percent }) => `${name} ${((percent ?? 0) * 100).toFixed(0)}%`}
+                        >
+                          {vehicleRevenueData.map((_: unknown, index: number) => (
+                            <Cell key={`cell-${index}`} fill={CHART_COLORS[index % CHART_COLORS.length]} />
+                          ))}
+                        </Pie>
+                        <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                        <Legend />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
 
-                {/* Monthly Revenue chart list */}
+                {/* Monthly Revenue - BarChart */}
                 <div className="lg:col-span-2 bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-                  <h3 className="font-bold text-base mb-6 text-slate-200 border-b border-slate-800 pb-3 flex items-center justify-between">
+                  <h3 className="font-bold text-base mb-4 text-slate-200 border-b border-slate-800 pb-3 flex items-center justify-between">
                     <span>Doanh thu theo tháng</span>
-                    <span className="text-xs text-primary-400">Hoạt động tài khóa</span>
+                    <span className="text-xs text-primary-400">Recharts</span>
                   </h3>
-                  {stats.monthlyRevenue.length === 0 ? (
+                  {monthlyChartData.length === 0 ? (
                     <p className="text-sm text-slate-500 text-center py-12">Chưa có thống kê doanh thu tháng.</p>
                   ) : (
-                    <div className="space-y-4">
-                      {stats.monthlyRevenue.map((item: any) => {
-                        const total = parseFloat(item.total);
-                        const maxVal = Math.max(...stats.monthlyRevenue.map((m: any) => parseFloat(m.total))) || 1;
-                        const barWidth = (total / maxVal) * 100;
-                        return (
-                          <div key={item.month} className="flex items-center gap-4 text-sm">
-                            <span className="w-16 font-semibold text-slate-400">{item.month}</span>
-                            <div className="flex-1 bg-slate-950 h-8 rounded-lg overflow-hidden border border-slate-850 flex items-center relative">
-                              <div 
-                                className="bg-gradient-to-r from-primary-600 to-indigo-500 h-full transition-all duration-500"
-                                style={{ width: `${barWidth}%` }}
-                              ></div>
-                              <span className="absolute left-3 font-bold text-xs text-white">
-                                {parseInt(item.total).toLocaleString('vi-VN')}đ
-                              </span>
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
+                    <ResponsiveContainer width="100%" height={280}>
+                      <BarChart data={monthlyChartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                        <XAxis dataKey="month" stroke="#94a3b8" fontSize={12} />
+                        <YAxis
+                          stroke="#94a3b8"
+                          fontSize={12}
+                          tickFormatter={(v) => `${(v / 1000000).toFixed(0)}M`}
+                        />
+                        <Tooltip
+                          formatter={(value) => formatCurrency(Number(value))}
+                          contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                          labelStyle={{ color: '#e2e8f0' }}
+                        />
+                        <Bar dataKey="revenue" name="Doanh thu" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                      </BarChart>
+                    </ResponsiveContainer>
                   )}
                 </div>
 
               </div>
+
+              {/* Slot status chart */}
+              {slotChartData.length > 0 && (
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+                  <h3 className="font-bold text-base mb-4 text-slate-200 border-b border-slate-800 pb-3">Tình trạng ô đỗ</h3>
+                  <ResponsiveContainer width="100%" height={240}>
+                    <BarChart data={slotChartData} layout="vertical" margin={{ top: 0, right: 20, left: 20, bottom: 0 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#334155" horizontal={false} />
+                      <XAxis type="number" stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                      <YAxis type="category" dataKey="name" stroke="#94a3b8" fontSize={12} width={80} />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                      />
+                      <Bar dataKey="value" name="Số ô" fill="#10b981" radius={[0, 6, 6, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              )}
             </>
           ) : (
             <div className="text-center text-slate-500 py-12">Không có dữ liệu thống kê.</div>

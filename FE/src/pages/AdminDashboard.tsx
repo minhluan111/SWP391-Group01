@@ -1,12 +1,49 @@
-import { useState, useEffect } from 'react';
-import { ShieldCheck, UserCog, UserMinus, ShieldAlert, Trash2, KeyRound, RefreshCw, UserCheck, Shield } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { ShieldCheck, RefreshCw } from 'lucide-react';
+import {
+  PieChart,
+  Pie,
+  Cell,
+  ResponsiveContainer,
+  Tooltip,
+  Legend,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+} from 'recharts';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 
+const ROLE_COLORS: Record<string, string> = {
+  Customer: '#6366f1',
+  Staff: '#10b981',
+  Manager: '#f59e0b',
+  Admin: '#ef4444',
+};
+
+const ROLE_LABELS: Record<string, string> = {
+  Customer: 'Khách hàng',
+  Staff: 'Nhân viên',
+  Manager: 'Quản lý',
+  Admin: 'Admin',
+};
+
+interface AdminUser {
+  id: number;
+  full_name: string;
+  email: string;
+  phone?: string;
+  role_name?: string;
+  is_active: boolean;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<AdminUser[]>([]);
   const [loading, setLoading] = useState(false);
-  const [actionLoading, setActionLoading] = useState<number | null>(null); // tracks user ID being updated
+  const [actionLoading, setActionLoading] = useState<number | null>(null);
 
   useEffect(() => {
     fetchUsers();
@@ -17,7 +54,7 @@ export default function AdminDashboard() {
     try {
       const response = await api.get('/admin/users');
       setUsers(response.data.data);
-    } catch (error: any) {
+    } catch {
       toast.error('Lỗi khi tải danh sách người dùng');
     } finally {
       setLoading(false);
@@ -51,10 +88,43 @@ export default function AdminDashboard() {
     }
   };
 
+  const roleChartData = useMemo(() => {
+    const counts: Record<string, number> = {};
+    users.forEach((u) => {
+      const role = u.role_name || 'Customer';
+      counts[role] = (counts[role] || 0) + 1;
+    });
+    return Object.entries(counts).map(([role, count]) => ({
+      name: ROLE_LABELS[role] || role,
+      value: count,
+      color: ROLE_COLORS[role] || '#94a3b8',
+    }));
+  }, [users]);
+
+  const statusChartData = useMemo(() => [
+    { name: 'Hoạt động', value: users.filter((u) => u.is_active).length, fill: '#10b981' },
+    { name: 'Bị khóa', value: users.filter((u) => !u.is_active).length, fill: '#ef4444' },
+  ], [users]);
+
+  const registrationChartData = useMemo(() => {
+    const monthCounts: Record<string, number> = {};
+    users.forEach((u) => {
+      const date = new Date(u.created_at);
+      const key = `${String(date.getMonth() + 1).padStart(2, '0')}/${date.getFullYear()}`;
+      monthCounts[key] = (monthCounts[key] || 0) + 1;
+    });
+    return Object.entries(monthCounts)
+      .map(([month, count]) => ({ month, count }))
+      .sort((a, b) => {
+        const [ma, ya] = a.month.split('/').map(Number);
+        const [mb, yb] = b.month.split('/').map(Number);
+        return ya !== yb ? ya - yb : ma - mb;
+      });
+  }, [users]);
+
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
       
-      {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
           <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 flex items-center gap-2">
@@ -73,7 +143,72 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      {/* Main user table */}
+      {/* Charts overview */}
+      {!loading && users.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Phân bố vai trò</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <PieChart>
+                <Pie
+                  data={roleChartData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={50}
+                  outerRadius={80}
+                  paddingAngle={3}
+                  dataKey="value"
+                >
+                  {roleChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.color} />
+                  ))}
+                </Pie>
+                <Tooltip />
+                <Legend />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Trạng thái tài khoản</h3>
+            <ResponsiveContainer width="100%" height={220}>
+              <BarChart data={statusChartData}>
+                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
+                <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                />
+                <Bar dataKey="value" name="Số tài khoản" radius={[6, 6, 0, 0]}>
+                  {statusChartData.map((entry) => (
+                    <Cell key={entry.name} fill={entry.fill} />
+                  ))}
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+
+          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Đăng ký theo tháng</h3>
+            {registrationChartData.length === 0 ? (
+              <p className="text-sm text-slate-500 text-center py-16">Chưa có dữ liệu.</p>
+            ) : (
+              <ResponsiveContainer width="100%" height={220}>
+                <BarChart data={registrationChartData}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
+                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} />
+                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                  <Tooltip
+                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                  />
+                  <Bar dataKey="count" name="Tài khoản mới" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
         {loading ? (
           <div className="p-16 text-center text-slate-500">Đang tải danh sách người dùng...</div>

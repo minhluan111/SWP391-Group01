@@ -249,7 +249,8 @@ export default function StaffDashboard() {
                     </div>
                     <button 
                       onClick={() => requestCheckoutInvoice(session)}
-                      className="w-full md:w-auto bg-rose-600 hover:bg-rose-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-colors text-sm"
+                      disabled={checkoutLoading}
+                      className="w-full md:w-auto bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-colors text-sm"
                     >
                       <LogOut className="w-4 h-4" /> Tính tiền & Cho ra
                     </button>

@@ -1,42 +1,47 @@
 import { Link, useNavigate } from 'react-router-dom';
 import { Car, Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { loginSchema, type LoginFormData } from '../schemas/auth';
+import FormFieldError from '../components/ui/FormFieldError';
+import { authInputClassLg } from '../lib/formStyles';
 
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [loading, setLoading] = useState(false);
-  
+  const [rememberMe, setRememberMe] = useState(true);
+
   const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleLogin = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!email || !password) {
-      toast.error('Vui lòng nhập đầy đủ email và mật khẩu');
-      return;
-    }
+  const {
+    register,
+    handleSubmit,
+    setValue,
+    formState: { errors, isSubmitting },
+  } = useForm<LoginFormData>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: { email: '', password: '' },
+  });
 
-    setLoading(true);
+  const onSubmit = async (data: LoginFormData) => {
     try {
-      const response = await api.post('/auth/login', { email, password });
+      const response = await api.post('/auth/login', data);
       toast.success('Đăng nhập thành công!');
-      login(response.data.token, response.data.user);
+      login(response.data.token, response.data.user, rememberMe);
       navigate('/');
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Đăng nhập thất bại');
-    } finally {
-      setLoading(false);
     }
   };
 
   const fillDemo = (roleEmail: string) => {
-    setEmail(roleEmail);
-    setPassword('123456'); // assuming a default password for demo purposes if they have it
+    setValue('email', roleEmail, { shouldValidate: true });
+    setValue('password', '123456', { shouldValidate: true });
+    setRememberMe(true);
   };
 
   return (
@@ -60,7 +65,6 @@ export default function Login() {
           
           <div className="mt-12">
              <div className="relative h-64 bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-700">
-               {/* Placeholder for left panel image */}
                <Car className="w-32 h-32 text-slate-600" />
                <div className="absolute bottom-4 left-4 right-4 flex gap-2">
                  <span className="bg-slate-900/80 backdrop-blur-sm text-xs px-3 py-1.5 rounded-full border border-slate-700">Quản lý thời gian thực</span>
@@ -89,7 +93,6 @@ export default function Login() {
       {/* Right Panel - Login Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div className="max-w-md w-full">
-          {/* Mobile Logo */}
           <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden justify-center">
             <div className="bg-primary-600 text-white p-2 rounded-lg">
               <Car className="w-6 h-6" />
@@ -102,27 +105,26 @@ export default function Login() {
             <p className="text-gray-500">Chào mừng quay trở lại hệ thống quản lý.</p>
           </div>
 
-          <form className="space-y-6" onSubmit={handleLogin}>
+          <form className="space-y-6" onSubmit={handleSubmit(onSubmit)} noValidate>
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
-              <input 
-                type="email" 
-                placeholder="Nhập email" 
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+              <input
+                type="email"
+                placeholder="Nhập email"
+                className={authInputClassLg(!!errors.email)}
+                {...register('email')}
               />
+              <FormFieldError message={errors.email?.message} />
             </div>
             
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">Mật khẩu</label>
               <div className="relative">
-                <input 
-                  type={showPassword ? 'text' : 'password'} 
-                  placeholder="Nhập mật khẩu" 
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary-500 focus:border-primary-500 transition-colors"
+                <input
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="Nhập mật khẩu"
+                  className={authInputClassLg(!!errors.password)}
+                  {...register('password')}
                 />
                 <button 
                   type="button"
@@ -132,18 +134,24 @@ export default function Login() {
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
               </div>
+              <FormFieldError message={errors.password?.message} />
             </div>
 
             <div className="flex items-center justify-between">
               <label className="flex items-center gap-2 cursor-pointer">
-                <input type="checkbox" className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500" />
+                <input
+                  type="checkbox"
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                />
                 <span className="text-sm text-gray-600">Ghi nhớ đăng nhập</span>
               </label>
               <Link to="/forgot-password" className="text-sm font-medium text-primary-600 hover:text-primary-700">Quên mật khẩu?</Link>
             </div>
 
-            <button disabled={loading} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
-              {loading ? 'Đang xử lý...' : 'Đăng nhập'}
+            <button disabled={isSubmitting} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors disabled:opacity-50">
+              {isSubmitting ? 'Đang xử lý...' : 'Đăng nhập'}
             </button>
           </form>
 
@@ -157,10 +165,10 @@ export default function Login() {
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
               Google
             </button>
-            <button className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
+            <button type="button" className="flex items-center justify-center gap-2 px-4 py-2 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
               Facebook
             </button>
           </div>

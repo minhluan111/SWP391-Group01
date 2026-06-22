@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Search, Car, Clock, Wrench, ShieldAlert, Sparkles } from 'lucide-react';
+import { Car, Clock, Wrench, ShieldAlert, Sparkles } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';

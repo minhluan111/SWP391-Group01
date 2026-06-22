@@ -1,9 +1,20 @@
 import { useState, useEffect } from 'react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../context/AuthContext';
 import { User, Mail, Shield, Car, Plus, Trash2, Clock, Calendar, Edit2, Check, X, Phone, QrCode, Lock, LayoutDashboard } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
+import {
+  profileSchema,
+  changePasswordSchema,
+  vehicleSchema,
+  type ProfileFormData,
+  type ChangePasswordFormData,
+  type VehicleFormData,
+} from '../schemas/auth';
+import FormFieldError from '../components/ui/FormFieldError';
 
 interface Vehicle {
   id: number;
@@ -32,17 +43,26 @@ export default function Profile() {
   
   // Profile state
   const [editProfileMode, setEditProfileMode] = useState(false);
-  const [editFullName, setEditFullName] = useState('');
-  const [editPhone, setEditPhone] = useState('');
-  const [savingProfile, setSavingProfile] = useState(false);
+
+  const profileForm = useForm<ProfileFormData>({
+    resolver: zodResolver(profileSchema),
+    defaultValues: { full_name: '', phone: '' },
+  });
+
+  const passwordForm = useForm<ChangePasswordFormData>({
+    resolver: zodResolver(changePasswordSchema),
+    defaultValues: { old_password: '', new_password: '', confirm_new_password: '' },
+  });
+
+  const vehicleForm = useForm<VehicleFormData>({
+    resolver: zodResolver(vehicleSchema),
+    defaultValues: { license_plate: '', vehicle_type: 'car' },
+  });
 
   // Vehicles state
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
   const [loadingVehicles, setLoadingVehicles] = useState(true);
   const [showAddVehicle, setShowAddVehicle] = useState(false);
-  const [newPlate, setNewPlate] = useState('');
-  const [newType, setNewType] = useState('car');
-  const [submittingVehicle, setSubmittingVehicle] = useState(false);
   
   // Edit vehicle state
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
@@ -52,12 +72,6 @@ export default function Profile() {
   // Reservations state
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
-
-  // Change password state
-  const [oldPassword, setOldPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [confirmNewPassword, setConfirmNewPassword] = useState('');
-  const [changingPassword, setChangingPassword] = useState(false);
 
   useEffect(() => {
     if (user) {
@@ -72,56 +86,49 @@ export default function Profile() {
       const response = await api.get('/auth/profile');
       if (response.data.success) {
         updateUser(response.data.user);
-        setEditFullName(response.data.user.full_name);
-        setEditPhone(response.data.user.phone || '');
+        profileForm.reset({
+          full_name: response.data.user.full_name,
+          phone: response.data.user.phone || '',
+        });
       }
     } catch (error) {
       console.error('Failed to fetch profile', error);
     }
   };
 
-  const handleSaveProfile = async () => {
-    if (!editFullName) return toast.error('Vui lòng nhập họ và tên');
-    setSavingProfile(true);
+  const onSaveProfile = async (data: ProfileFormData) => {
     try {
-      const response = await api.put('/auth/profile', { full_name: editFullName, phone: editPhone });
+      const response = await api.put('/auth/profile', data);
       if (response.data.success) {
         updateUser(response.data.user);
         toast.success('Cập nhật hồ sơ thành công');
         setEditProfileMode(false);
       }
-    } catch (error) {
+    } catch {
       toast.error('Lỗi khi cập nhật hồ sơ');
-    } finally {
-      setSavingProfile(false);
     }
   };
 
-  const handleChangePassword = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword !== confirmNewPassword) {
-      return toast.error('Mật khẩu xác nhận không khớp');
-    }
-    if (newPassword.length < 6) {
-      return toast.error('Mật khẩu mới phải từ 6 ký tự trở lên');
-    }
-    setChangingPassword(true);
+  const onChangePassword = async (data: ChangePasswordFormData) => {
     try {
       const response = await api.put('/auth/change-password', {
-        old_password: oldPassword,
-        new_password: newPassword
+        old_password: data.old_password,
+        new_password: data.new_password,
       });
       if (response.data.success) {
         toast.success('Đổi mật khẩu thành công!');
-        setOldPassword('');
-        setNewPassword('');
-        setConfirmNewPassword('');
+        passwordForm.reset();
       }
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Lỗi khi đổi mật khẩu');
-    } finally {
-      setChangingPassword(false);
     }
+  };
+
+  const openEditProfile = () => {
+    if (user) {
+      profileForm.reset({ full_name: user.full_name, phone: user.phone || '' });
+    }
+    setEditProfileMode(true);
   };
 
   const fetchVehicles = async () => {
@@ -150,21 +157,15 @@ export default function Profile() {
     }
   };
 
-  const handleAddVehicle = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newPlate) return toast.error('Vui lòng nhập biển số xe');
-    
-    setSubmittingVehicle(true);
+  const onAddVehicle = async (data: VehicleFormData) => {
     try {
-      await api.post('/vehicles', { license_plate: newPlate, vehicle_type: newType });
+      await api.post('/vehicles', data);
       toast.success('Thêm phương tiện thành công');
-      setNewPlate('');
+      vehicleForm.reset({ license_plate: '', vehicle_type: 'car' });
       setShowAddVehicle(false);
       fetchVehicles();
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Lỗi khi thêm xe');
-    } finally {
-      setSubmittingVehicle(false);
     }
   };
 
@@ -187,7 +188,13 @@ export default function Profile() {
   };
 
   const handleSaveVehicle = async (id: number) => {
-    if (!editPlate) return toast.error('Vui lòng nhập biển số');
+    const parsed = vehicleSchema.safeParse({
+      license_plate: editPlate,
+      vehicle_type: editVehicleType as 'car' | 'motorbike',
+    });
+    if (!parsed.success) {
+      return toast.error(parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ');
+    }
     try {
       await api.put(`/vehicles/${id}`, { license_plate: editPlate, vehicle_type: editVehicleType });
       toast.success('Cập nhật phương tiện thành công');
@@ -241,7 +248,7 @@ export default function Profile() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden relative shadow-lg">
             {!editProfileMode && (
               <button 
-                onClick={() => setEditProfileMode(true)}
+                onClick={openEditProfile}
                 className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors bg-slate-950/60 p-2 rounded-xl border border-slate-850"
               >
                 <Edit2 className="w-4 h-4" />
@@ -266,41 +273,51 @@ export default function Profile() {
             
             <div className="p-6">
               {editProfileMode ? (
-                <div className="space-y-4">
+                <form className="space-y-4" onSubmit={profileForm.handleSubmit(onSaveProfile)} noValidate>
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Họ và tên</label>
-                    <input 
-                      type="text" 
-                      value={editFullName} 
-                      onChange={(e) => setEditFullName(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    <input
+                      type="text"
+                      className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                        profileForm.formState.errors.full_name ? 'border-red-400' : 'border-slate-800'
+                      }`}
+                      {...profileForm.register('full_name')}
                     />
+                    <FormFieldError message={profileForm.formState.errors.full_name?.message} />
                   </div>
                   <div>
                     <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Số điện thoại</label>
-                    <input 
-                      type="text" 
-                      value={editPhone} 
-                      onChange={(e) => setEditPhone(e.target.value)}
-                      className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    <input
+                      type="text"
+                      className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                        profileForm.formState.errors.phone ? 'border-red-400' : 'border-slate-800'
+                      }`}
+                      {...profileForm.register('phone')}
                     />
+                    <FormFieldError message={profileForm.formState.errors.phone?.message} />
                   </div>
                   <div className="flex gap-2 pt-2">
-                    <button 
-                      onClick={handleSaveProfile} 
-                      disabled={savingProfile}
-                      className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-sm font-bold active:scale-95 transition-all"
+                    <button
+                      type="submit"
+                      disabled={profileForm.formState.isSubmitting}
+                      className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-sm font-bold active:scale-95 transition-all disabled:opacity-50"
                     >
                       Lưu
                     </button>
-                    <button 
-                      onClick={() => { setEditProfileMode(false); setEditFullName(user.full_name); setEditPhone(user.phone || ''); }}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditProfileMode(false);
+                        if (user) {
+                          profileForm.reset({ full_name: user.full_name, phone: user.phone || '' });
+                        }
+                      }}
                       className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold transition-all"
                     >
                       Hủy
                     </button>
                   </div>
-                </div>
+                </form>
               ) : (
                 <div className="space-y-4 text-sm text-slate-300">
                   <div className="flex items-center gap-3">
@@ -417,46 +434,49 @@ export default function Profile() {
             <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-4">
               <Lock className="w-5 h-5 text-primary-500" /> Đổi mật khẩu
             </h3>
-            <form onSubmit={handleChangePassword} className="space-y-4">
+            <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4" noValidate>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu cũ</label>
-                <input 
-                  type="password" 
-                  value={oldPassword} 
-                  onChange={(e) => setOldPassword(e.target.value)}
+                <input
+                  type="password"
                   placeholder="Nhập mật khẩu hiện tại"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  required
+                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                    passwordForm.formState.errors.old_password ? 'border-red-400' : 'border-slate-800'
+                  }`}
+                  {...passwordForm.register('old_password')}
                 />
+                <FormFieldError message={passwordForm.formState.errors.old_password?.message} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu mới</label>
-                <input 
-                  type="password" 
-                  value={newPassword} 
-                  onChange={(e) => setNewPassword(e.target.value)}
+                <input
+                  type="password"
                   placeholder="Nhập mật khẩu mới"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  required
+                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                    passwordForm.formState.errors.new_password ? 'border-red-400' : 'border-slate-800'
+                  }`}
+                  {...passwordForm.register('new_password')}
                 />
+                <FormFieldError message={passwordForm.formState.errors.new_password?.message} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Xác nhận mật khẩu mới</label>
-                <input 
-                  type="password" 
-                  value={confirmNewPassword} 
-                  onChange={(e) => setConfirmNewPassword(e.target.value)}
+                <input
+                  type="password"
                   placeholder="Nhập lại mật khẩu mới"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
-                  required
+                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                    passwordForm.formState.errors.confirm_new_password ? 'border-red-400' : 'border-slate-800'
+                  }`}
+                  {...passwordForm.register('confirm_new_password')}
                 />
+                <FormFieldError message={passwordForm.formState.errors.confirm_new_password?.message} />
               </div>
-              <button 
-                type="submit" 
-                disabled={changingPassword}
+              <button
+                type="submit"
+                disabled={passwordForm.formState.isSubmitting}
                 className="w-full bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-sm font-bold transition-all disabled:opacity-50 active:scale-95"
               >
-                {changingPassword ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
+                {passwordForm.formState.isSubmitting ? 'Đang cập nhật...' : 'Đổi mật khẩu'}
               </button>
             </form>
           </div>
@@ -478,27 +498,39 @@ export default function Profile() {
             </div>
 
             {showAddVehicle && (
-              <form onSubmit={handleAddVehicle} className="mb-4 p-4 bg-slate-950 border border-slate-850 rounded-xl space-y-3.5">
+              <form onSubmit={vehicleForm.handleSubmit(onAddVehicle)} className="mb-4 p-4 bg-slate-950 border border-slate-850 rounded-xl space-y-3.5" noValidate>
                 <div>
-                  <input 
-                    type="text" 
-                    placeholder="Biển số (VD: 29A-123.45)" 
-                    value={newPlate}
-                    onChange={(e) => setNewPlate(e.target.value)}
-                    className="w-full px-3 py-2 bg-slate-900 border border-slate-850 rounded-lg text-sm text-white focus:outline-none"
+                  <input
+                    type="text"
+                    placeholder="Biển số (VD: 29A-123.45)"
+                    className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white focus:outline-none ${
+                      vehicleForm.formState.errors.license_plate ? 'border-red-400' : 'border-slate-850'
+                    }`}
+                    {...vehicleForm.register('license_plate')}
                   />
+                  <FormFieldError message={vehicleForm.formState.errors.license_plate?.message} />
                 </div>
                 <div className="flex gap-4">
                   <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input type="radio" name="type" value="car" checked={newType === 'car'} onChange={(e) => setNewType(e.target.value)} className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0" /> 🚗 Ô tô
+                    <input
+                      type="radio"
+                      value="car"
+                      className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0"
+                      {...vehicleForm.register('vehicle_type')}
+                    /> 🚗 Ô tô
                   </label>
                   <label className="flex items-center gap-2 text-xs cursor-pointer">
-                    <input type="radio" name="type" value="motorbike" checked={newType === 'motorbike'} onChange={(e) => setNewType(e.target.value)} className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0" /> 🏍️ Xe máy
+                    <input
+                      type="radio"
+                      value="motorbike"
+                      className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0"
+                      {...vehicleForm.register('vehicle_type')}
+                    /> 🏍️ Xe máy
                   </label>
                 </div>
                 <div className="flex gap-2">
-                  <button type="submit" disabled={submittingVehicle} className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50">Lưu lại</button>
-                  <button type="button" onClick={() => setShowAddVehicle(false)} className="flex-1 bg-slate-800 text-slate-400 py-2 rounded-lg text-xs font-bold transition-all">Hủy</button>
+                  <button type="submit" disabled={vehicleForm.formState.isSubmitting} className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50">Lưu lại</button>
+                  <button type="button" onClick={() => { setShowAddVehicle(false); vehicleForm.reset(); }} className="flex-1 bg-slate-800 text-slate-400 py-2 rounded-lg text-xs font-bold transition-all">Hủy</button>
                 </div>
               </form>
             )}
