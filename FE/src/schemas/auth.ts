@@ -75,12 +75,17 @@ export const changePasswordSchema = z
 
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
+// Biển số VN: VD 51F-12345 (4-5 số), 29A-123.45 (dạng có dấu chấm)
+const licensePlateRegex = /^[0-9]{2}[A-Z]{1,2}[0-9]?-(?:[0-9]{4,5}|[0-9]{3}\.[0-9]{2})$/;
+
 export const vehicleSchema = z.object({
   license_plate: z
     .string()
     .min(1, 'Vui lòng nhập biển số xe')
-    .min(4, 'Biển số xe không hợp lệ')
-    .max(20, 'Biển số xe quá dài'),
+    .transform((val) => val.trim().toUpperCase())
+    .refine((val) => licensePlateRegex.test(val), {
+      message: 'Biển số không đúng định dạng (VD: 59X-12345, 51F-1234 hoặc 29A-123.45)',
+    }),
   vehicle_type: z.enum(['car', 'motorbike']),
 });
 

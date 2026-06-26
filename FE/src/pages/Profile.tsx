@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '../context/AuthContext';
-import { User, Mail, Shield, Car, Plus, Trash2, Clock, Calendar, Edit2, Check, X, Phone, QrCode, Lock, LayoutDashboard } from 'lucide-react';
+import { User, Mail, Shield, Plus, Trash2, Clock, Calendar, Edit2, Check, X, Phone, QrCode, Ticket, Lock, LayoutDashboard, Search, RotateCcw } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { Link } from 'react-router-dom';
@@ -15,6 +15,27 @@ import {
   type VehicleFormData,
 } from '../schemas/auth';
 import FormFieldError from '../components/ui/FormFieldError';
+import PasswordInput from '../components/ui/PasswordInput';
+import PasswordStrengthBar from '../components/ui/PasswordStrengthBar';
+import PasswordMatchIndicator from '../components/ui/PasswordMatchIndicator';
+import { VehicleTypeIcon, VehiclesSectionIcon } from '../components/ui/VehicleTypeIcon';
+import ReservationTicketModal from '../components/profile/ReservationTicketModal';
+import { formatDateTime24 } from '../lib/dateTimeFormat';
+import {
+  countInLotReservations,
+  countPendingReservations,
+  filterReservations,
+  getDisplayTicketCode,
+  getReservationBannerContent,
+  getStatusColor,
+  getStatusText,
+  getTicketGlassClass,
+  RESERVATION_BANNER_SUFFIX,
+  shouldShowTicketQr,
+  type StatusFilter,
+  type TimePreset,
+  type VehicleFilter,
+} from '../lib/reservationUtils';
 
 interface Vehicle {
   id: number;
@@ -25,6 +46,7 @@ interface Vehicle {
 interface Reservation {
   id: number;
   reservation_code: string;
+  ticket_code?: string;
   reservation_time: string;
   expected_checkout_time: string;
   status: string;
@@ -54,6 +76,9 @@ export default function Profile() {
     defaultValues: { old_password: '', new_password: '', confirm_new_password: '' },
   });
 
+  const newPasswordValue = passwordForm.watch('new_password');
+  const confirmNewPasswordValue = passwordForm.watch('confirm_new_password');
+
   const vehicleForm = useForm<VehicleFormData>({
     resolver: zodResolver(vehicleSchema),
     defaultValues: { license_plate: '', vehicle_type: 'car' },
@@ -67,11 +92,19 @@ export default function Profile() {
   // Edit vehicle state
   const [editingVehicleId, setEditingVehicleId] = useState<number | null>(null);
   const [editPlate, setEditPlate] = useState('');
+  const [editPlateError, setEditPlateError] = useState('');
   const [editVehicleType, setEditVehicleType] = useState('car');
 
   // Reservations state
   const [reservations, setReservations] = useState<Reservation[]>([]);
   const [loadingReservations, setLoadingReservations] = useState(true);
+  const [selectedTicket, setSelectedTicket] = useState<Reservation | null>(null);
+
+  // Reservation filters
+  const [searchQuery, setSearchQuery] = useState('');
+  const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>('all');
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const [timePreset, setTimePreset] = useState<TimePreset>('all');
 
   useEffect(() => {
     if (user) {
@@ -184,6 +217,7 @@ export default function Profile() {
   const handleEditVehicle = (v: Vehicle) => {
     setEditingVehicleId(v.id);
     setEditPlate(v.license_plate);
+    setEditPlateError('');
     setEditVehicleType(v.vehicle_type);
   };
 
@@ -193,10 +227,16 @@ export default function Profile() {
       vehicle_type: editVehicleType as 'car' | 'motorbike',
     });
     if (!parsed.success) {
-      return toast.error(parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ');
+      const message = parsed.error.issues[0]?.message || 'Dữ liệu không hợp lệ';
+      setEditPlateError(message);
+      return toast.error(message);
     }
+    setEditPlateError('');
     try {
-      await api.put(`/vehicles/${id}`, { license_plate: editPlate, vehicle_type: editVehicleType });
+      await api.put(`/vehicles/${id}`, {
+        license_plate: parsed.data.license_plate,
+        vehicle_type: parsed.data.vehicle_type,
+      });
       toast.success('Cập nhật phương tiện thành công');
       setEditingVehicleId(null);
       fetchVehicles();
@@ -205,35 +245,56 @@ export default function Profile() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch(status) {
-      case 'pending': return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
-      case 'checked_in': return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
-      case 'expired': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      case 'cancelled': return 'bg-slate-800 text-slate-400 border-slate-700';
-      default: return 'bg-slate-800 text-slate-400 border-slate-700';
-    }
+  const pendingCount = useMemo(() => countPendingReservations(reservations), [reservations]);
+
+  const inLotCount = useMemo(() => countInLotReservations(reservations), [reservations]);
+
+  const bannerContent = useMemo(
+    () => getReservationBannerContent(pendingCount, inLotCount),
+    [pendingCount, inLotCount],
+  );
+
+  const filteredReservations = useMemo(
+    () =>
+      filterReservations(reservations, {
+        searchQuery,
+        vehicleFilter,
+        statusFilter,
+        timePreset,
+      }),
+    [reservations, searchQuery, vehicleFilter, statusFilter, timePreset],
+  );
+
+  const hasActiveFilters =
+    searchQuery.trim() !== '' ||
+    vehicleFilter !== 'all' ||
+    statusFilter !== 'all' ||
+    timePreset !== 'all';
+
+  const clearFilters = () => {
+    setSearchQuery('');
+    setVehicleFilter('all');
+    setStatusFilter('all');
+    setTimePreset('all');
   };
 
-  const getStatusText = (status: string) => {
-    switch(status) {
-      case 'pending': return 'Đang chờ';
-      case 'checked_in': return 'Đã vào bãi';
-      case 'expired': return 'Hết hạn';
-      case 'cancelled': return 'Đã hủy';
-      default: return status;
-    }
-  };
+  const filterChipClass = (active: boolean) =>
+    `px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
+      active
+        ? 'border-primary-500 bg-primary-500/15 text-primary-300'
+        : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+    }`;
 
   if (!user) {
     return <div className="text-center py-20 bg-slate-950 text-white min-h-screen">Vui lòng đăng nhập để xem hồ sơ.</div>;
   }
 
-  // Find the active booking (status === 'pending') to generate ticket card
-  const activeReservation = reservations.find(r => r.status === 'pending');
-
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10 font-sans">
+      <ReservationTicketModal
+        reservation={selectedTicket}
+        onClose={() => setSelectedTicket(null)}
+      />
       <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 mb-8 flex items-center gap-2">
         <User className="text-primary-500 w-8 h-8" />
         Hồ sơ cá nhân
@@ -437,38 +498,31 @@ export default function Profile() {
             <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4" noValidate>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu cũ</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Nhập mật khẩu hiện tại"
-                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                    passwordForm.formState.errors.old_password ? 'border-red-400' : 'border-slate-800'
-                  }`}
+                  hasError={!!passwordForm.formState.errors.old_password}
                   {...passwordForm.register('old_password')}
                 />
                 <FormFieldError message={passwordForm.formState.errors.old_password?.message} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu mới</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Nhập mật khẩu mới"
-                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                    passwordForm.formState.errors.new_password ? 'border-red-400' : 'border-slate-800'
-                  }`}
+                  hasError={!!passwordForm.formState.errors.new_password}
                   {...passwordForm.register('new_password')}
                 />
+                <PasswordStrengthBar password={newPasswordValue} />
                 <FormFieldError message={passwordForm.formState.errors.new_password?.message} />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Xác nhận mật khẩu mới</label>
-                <input
-                  type="password"
+                <PasswordInput
                   placeholder="Nhập lại mật khẩu mới"
-                  className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                    passwordForm.formState.errors.confirm_new_password ? 'border-red-400' : 'border-slate-800'
-                  }`}
+                  hasError={!!passwordForm.formState.errors.confirm_new_password}
                   {...passwordForm.register('confirm_new_password')}
                 />
+                <PasswordMatchIndicator password={newPasswordValue} confirmPassword={confirmNewPasswordValue} />
                 <FormFieldError message={passwordForm.formState.errors.confirm_new_password?.message} />
               </div>
               <button
@@ -485,7 +539,7 @@ export default function Profile() {
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
-                <Car className="w-5 h-5 text-primary-500" /> Phương tiện đỗ
+                <VehiclesSectionIcon /> Phương tiện đỗ
               </h3>
               {!showAddVehicle && (
                 <button 
@@ -545,12 +599,18 @@ export default function Profile() {
                   <li key={v.id} className="p-3.5 rounded-xl border border-slate-850 bg-slate-950/60">
                     {editingVehicleId === v.id ? (
                       <div className="space-y-3">
-                        <input 
-                          type="text" 
-                          value={editPlate} 
-                          onChange={(e) => setEditPlate(e.target.value)}
-                          className="w-full px-3 py-1.5 bg-slate-900 border border-slate-800 rounded-lg text-sm text-white focus:outline-none"
+                        <input
+                          type="text"
+                          value={editPlate}
+                          onChange={(e) => {
+                            setEditPlate(e.target.value);
+                            setEditPlateError('');
+                          }}
+                          className={`w-full px-3 py-1.5 bg-slate-900 border rounded-lg text-sm text-white focus:outline-none ${
+                            editPlateError ? 'border-red-400' : 'border-slate-800'
+                          }`}
                         />
+                        <FormFieldError message={editPlateError} />
                         <div className="flex gap-4">
                           <label className="flex items-center gap-2 text-xs cursor-pointer">
                             <input type="radio" name={`edit_type_${v.id}`} value="car" checked={editVehicleType === 'car'} onChange={(e) => setEditVehicleType(e.target.value)} className="text-primary-600" /> Ô tô
@@ -567,9 +627,7 @@ export default function Profile() {
                     ) : (
                       <div className="flex justify-between items-center">
                         <div className="flex items-center gap-3">
-                          <div className={`p-2 rounded-lg ${v.vehicle_type === 'car' ? 'bg-blue-500/10 text-blue-400' : 'bg-orange-500/10 text-orange-400'}`}>
-                            <Car className="w-4 h-4" />
-                          </div>
+                          <VehicleTypeIcon vehicleType={v.vehicle_type} />
                           <div>
                             <p className="font-bold text-slate-100 text-sm font-mono">{v.license_plate}</p>
                             <p className="text-xs text-slate-400 capitalize">{v.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</p>
@@ -592,73 +650,113 @@ export default function Profile() {
           </div>
         </div>
 
-        {/* Right Column: Ticket / Active Booking and Reservations history */}
-        <div className="lg:col-span-2 space-y-8">
-          
-          {/* Active Booking Ticket Card (User Current Booking Details) */}
-          {activeReservation && (
-            <div className="glass-morphism border border-slate-800 rounded-3xl overflow-hidden shadow-2xl relative bg-gradient-to-r from-slate-900 to-indigo-950/20">
-              
-              <div className="absolute top-0 right-0 -mr-12 -mt-12 w-24 h-24 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
-
-              <div className="p-6 md:p-8 flex flex-col md:flex-row items-center justify-between gap-8">
-                <div className="space-y-4 flex-1">
-                  <div className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-wider">
-                    <QrCode className="w-4 h-4" />
-                    <span>Mã vé đỗ xe hiện tại của bạn</span>
-                  </div>
-                  
-                  <div>
-                    <h3 className="text-3xl font-black text-slate-100 tracking-tight font-mono">
-                      {activeReservation.reservation_code}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">Đăng ký vào lúc: {new Date(activeReservation.reservation_time).toLocaleString('vi-VN')}</p>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
-                    <div>
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">VỊ TRÍ ĐỖ</span>
-                      <strong className="text-emerald-400 text-lg font-bold">{activeReservation.slot_code}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">TẦNG ĐỖ</span>
-                      <strong className="text-slate-200 text-lg font-bold">
-                        {activeReservation.slot_code.startsWith('B') ? 'Tầng 1 - Xe máy' : 'Tầng 2 - Ô tô'}
-                      </strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">BIỂN SỐ XE</span>
-                      <strong className="font-mono text-slate-200 text-lg font-bold">{activeReservation.license_plate}</strong>
-                    </div>
-                    <div>
-                      <span className="text-slate-500 block text-xs uppercase font-semibold">LOẠI XE</span>
-                      <span className="capitalize text-slate-300 font-bold">{activeReservation.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* QR Code container */}
-                <div className="flex flex-col items-center justify-center p-4 bg-white rounded-2xl shadow-lg border border-slate-200 flex-shrink-0">
-                  <img 
-                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=${encodeURIComponent(activeReservation.reservation_code)}`} 
-                    alt="Booking QR Code" 
-                    className="w-36 h-36"
-                  />
-                  <span className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider">ĐƯA STAFF QUÉT KHI VÀO</span>
-                </div>
-              </div>
-
-              {/* Decorative cutouts for ticket card */}
-              <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-r border-slate-800"></div>
-              <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-l border-slate-800"></div>
-            </div>
-          )}
+        {/* Right Column: Reservations history */}
+        <div className="lg:col-span-2 space-y-6">
 
           {/* History Reservations Table */}
           <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-6">
-              <Calendar className="w-5 h-5 text-primary-500" /> Nhật ký đặt chỗ
-            </h3>
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+              <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+                <Calendar className="w-5 h-5 text-primary-500" /> Nhật ký đặt chỗ
+              </h3>
+              {hasActiveFilters && (
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary-300 transition-colors"
+                >
+                  <RotateCcw className="w-3.5 h-3.5" /> Xóa bộ lọc
+                </button>
+              )}
+            </div>
+
+            {bannerContent && (
+              <div className="reservation-banner mb-5 flex items-start gap-3 p-4 pl-5 rounded-xl text-base text-primary-50">
+                <QrCode className="w-6 h-6 flex-shrink-0 mt-0.5 text-primary-300 animate-pulse" />
+                <p className="leading-relaxed">
+                  Bạn có{' '}
+                  {bannerContent.bookingPhrase && (
+                    <strong className="text-white font-bold">{bannerContent.bookingPhrase}</strong>
+                  )}
+                  {bannerContent.bookingPhrase && bannerContent.inLotPhrase && ' và '}
+                  {bannerContent.inLotPhrase && (
+                    <strong className="text-white font-bold">{bannerContent.inLotPhrase}</strong>
+                  )}
+                  <span className="block mt-1 text-sm text-primary-200/90">
+                    — {RESERVATION_BANNER_SUFFIX}
+                  </span>
+                </p>
+              </div>
+            )}
+
+            {/* Filters */}
+            <div className="space-y-4 mb-6">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Tìm mã vé, vị trí, biển số..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                />
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Loại xe</span>
+                {([
+                  ['all', 'Tất cả'],
+                  ['motorbike', 'Xe máy'],
+                  ['car', 'Ô tô'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setVehicleFilter(value)}
+                    className={filterChipClass(vehicleFilter === value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Trạng thái</span>
+                {([
+                  ['all', 'Tất cả'],
+                  ['pending', 'Đang chờ'],
+                  ['checked_in', 'Đã vào bãi'],
+                  ['completed', 'Đã hoàn tất'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setStatusFilter(value)}
+                    className={filterChipClass(statusFilter === value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+
+              <div className="flex flex-wrap gap-2">
+                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Thời gian</span>
+                {([
+                  ['all', 'Tất cả'],
+                  ['7d', '7 ngày'],
+                  ['30d', '30 ngày'],
+                ] as const).map(([value, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    onClick={() => setTimePreset(value)}
+                    className={filterChipClass(timePreset === value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
+            </div>
 
             {loadingReservations ? (
               <div className="text-center py-12 text-slate-500">Đang tải lịch sử đặt chỗ...</div>
@@ -667,8 +765,23 @@ export default function Profile() {
                 <Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" />
                 <p className="text-slate-400 font-medium">Bạn chưa thực hiện lượt đặt chỗ nào.</p>
               </div>
+            ) : filteredReservations.length === 0 ? (
+              <div className="text-center py-16 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
+                <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
+                <p className="text-slate-400 font-medium">Không tìm thấy đặt chỗ phù hợp bộ lọc.</p>
+                <button
+                  type="button"
+                  onClick={clearFilters}
+                  className="mt-3 text-sm text-primary-400 hover:text-primary-300 font-semibold"
+                >
+                  Xóa bộ lọc
+                </button>
+              </div>
             ) : (
               <div className="overflow-x-auto">
+                <p className="text-xs text-slate-500 mb-3">
+                  Hiển thị {filteredReservations.length} / {reservations.length} lượt đặt chỗ
+                </p>
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
                     <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase font-semibold">
@@ -681,66 +794,81 @@ export default function Profile() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-850">
-                    {reservations.map((res) => (
-                      <tr key={res.id} className="hover:bg-slate-800/10 transition-colors">
-                        <td className="py-4 font-mono text-slate-200">{res.reservation_code}</td>
-                        <td className="py-4">
-                          <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg font-bold font-mono">
-                            {res.slot_code}
-                          </span>
-                        </td>
-                        <td className="py-4">
-                          <span className="font-bold text-slate-100 block font-mono">{res.license_plate}</span>
-                          <span className="text-xs text-slate-400 capitalize">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
-                        </td>
-                        <td className="py-4 text-xs text-slate-300 space-y-1">
-                          <div>
-                            <span className="text-slate-500">Đặt: </span> 
-                            {new Date(res.reservation_time).toLocaleString('vi-VN')}
-                          </div>
-                          {res.expected_checkout_time && (
+                    {filteredReservations.map((res) => {
+                      const showQr = shouldShowTicketQr(res);
+                      const ticketGlassClass = getTicketGlassClass(res);
+                      const TicketIcon = showQr ? QrCode : Ticket;
+                      return (
+                        <tr key={res.id} className="hover:bg-slate-800/10 transition-colors">
+                          <td className="py-4 font-mono">
+                            <button
+                              type="button"
+                              onClick={() => setSelectedTicket(res)}
+                              className={`inline-flex items-center gap-1.5 ${ticketGlassClass}`}
+                              title={showQr ? 'Xem chi tiết vé và mã QR' : 'Xem chi tiết vé'}
+                            >
+                              <TicketIcon className="w-3.5 h-3.5" />
+                              {getDisplayTicketCode(res)}
+                            </button>
+                          </td>
+                          <td className="py-4">
+                            <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg font-bold font-mono">
+                              {res.slot_code}
+                            </span>
+                          </td>
+                          <td className="py-4">
+                            <span className="font-bold text-slate-100 block font-mono">{res.license_plate}</span>
+                            <span className="text-xs text-slate-400 capitalize">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
+                          </td>
+                          <td className="py-4 text-xs text-slate-300 space-y-1">
                             <div>
-                              <span className="text-slate-500">Dự kiến ra: </span> 
-                              {new Date(res.expected_checkout_time).toLocaleString('vi-VN')}
+                              <span className="text-slate-500">Đặt: </span>
+                              {formatDateTime24(res.reservation_time)}
                             </div>
-                          )}
-                          {res.check_in_time && (
-                            <div className="text-blue-400">
-                              <span className="text-slate-500">Vào bãi: </span> 
-                              {new Date(res.check_in_time).toLocaleString('vi-VN')}
-                            </div>
-                          )}
-                          {res.check_out_time && (
-                            <div className="text-emerald-400">
-                              <span className="text-slate-500">Ra bãi: </span> 
-                              {new Date(res.check_out_time).toLocaleString('vi-VN')}
-                            </div>
-                          )}
-                        </td>
-                        <td className="py-4 text-xs text-slate-300">
-                          {res.total_amount !== undefined && res.total_amount !== null ? (
-                            <div className="space-y-1">
-                              <div className="font-bold text-slate-100">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
-                              <div className="text-[9px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 uppercase font-semibold">
-                                  {res.payment_method === 'cash' ? 'Tiền mặt' : 'Online'}
-                                </span>
-                                <span className={`px-1.5 py-0.5 rounded font-semibold ${res.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'}`}>
-                                  {res.payment_status === 'paid' ? 'Đã trả' : 'Chưa trả'}
-                                </span>
+                            {res.expected_checkout_time && (
+                              <div>
+                                <span className="text-slate-500">Dự kiến ra: </span>
+                                {formatDateTime24(res.expected_checkout_time)}
                               </div>
-                            </div>
-                          ) : (
-                            <span className="text-slate-500">—</span>
-                          )}
-                        </td>
-                        <td className="py-4">
-                          <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusColor(res.status)}`}>
-                            {getStatusText(res.status)}
-                          </span>
-                        </td>
-                      </tr>
-                    ))}
+                            )}
+                            {res.check_in_time && (
+                              <div className="text-blue-400">
+                                <span className="text-slate-500">Vào bãi: </span>
+                                {formatDateTime24(res.check_in_time)}
+                              </div>
+                            )}
+                            {res.check_out_time && (
+                              <div className="text-emerald-400">
+                                <span className="text-slate-500">Ra bãi: </span>
+                                {formatDateTime24(res.check_out_time)}
+                              </div>
+                            )}
+                          </td>
+                          <td className="py-4 text-xs text-slate-300">
+                            {res.total_amount !== undefined && res.total_amount !== null ? (
+                              <div className="space-y-1">
+                                <div className="font-bold text-slate-100">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
+                                <div className="text-[9px] text-slate-400 flex items-center gap-1.5 mt-0.5">
+                                  <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 uppercase font-semibold">
+                                    {res.payment_method === 'cash' ? 'Tiền mặt' : 'Online'}
+                                  </span>
+                                  <span className={`px-1.5 py-0.5 rounded font-semibold ${res.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'}`}>
+                                    {res.payment_status === 'paid' ? 'Đã trả' : 'Chưa trả'}
+                                  </span>
+                                </div>
+                              </div>
+                            ) : (
+                              <span className="text-slate-500">—</span>
+                            )}
+                          </td>
+                          <td className="py-4">
+                            <span className={`px-2.5 py-1 rounded-full text-[10px] font-bold uppercase border ${getStatusColor(res.status, res)}`}>
+                              {getStatusText(res.status, res)}
+                            </span>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>

@@ -12,6 +12,7 @@ import {
   type ResetPasswordFormData,
 } from '../schemas/auth';
 import FormFieldError from '../components/ui/FormFieldError';
+import PasswordInput from '../components/ui/PasswordInput';
 import PasswordStrengthBar from '../components/ui/PasswordStrengthBar';
 import PasswordMatchIndicator from '../components/ui/PasswordMatchIndicator';
 
@@ -147,10 +148,10 @@ export default function ForgotPassword() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Mật khẩu mới</label>
-              <input
-                type="password"
+              <PasswordInput
+                variant="forgot"
                 placeholder="Nhập mật khẩu mới..."
-                className={darkInputClass(!!resetForm.formState.errors.new_password)}
+                hasError={!!resetForm.formState.errors.new_password}
                 {...resetForm.register('new_password')}
               />
               <PasswordStrengthBar password={newPasswordValue} />
@@ -159,10 +160,10 @@ export default function ForgotPassword() {
 
             <div>
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nhập lại mật khẩu</label>
-              <input
-                type="password"
+              <PasswordInput
+                variant="forgot"
                 placeholder="Nhập lại mật khẩu..."
-                className={darkInputClass(!!resetForm.formState.errors.confirm_password)}
+                hasError={!!resetForm.formState.errors.confirm_password}
                 {...resetForm.register('confirm_password')}
               />
               <PasswordMatchIndicator password={newPasswordValue} confirmPassword={confirmPasswordValue} />

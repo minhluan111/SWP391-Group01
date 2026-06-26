@@ -15,6 +15,7 @@ import {
 } from 'recharts';
 import api from '../services/api';
 import toast from 'react-hot-toast';
+import { formatDateTime24 } from '../lib/dateTimeFormat';
 
 const ROLE_COLORS: Record<string, string> = {
   Customer: '#6366f1',
@@ -233,7 +234,7 @@ export default function AdminDashboard() {
                     <td className="p-4">
                       <span className="font-bold text-slate-100 block">{u.full_name}</span>
                       <span className="text-xs text-slate-500">
-                        Đăng ký: {new Date(u.created_at).toLocaleDateString('vi-VN')}
+                        Đăng ký: {formatDateTime24(u.created_at)}
                       </span>
                     </td>
                     <td className="p-4 text-slate-200">{u.email}</td>

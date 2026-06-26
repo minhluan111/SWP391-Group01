@@ -1,9 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Car, Clock, Wrench, ShieldAlert, Sparkles } from 'lucide-react';
+import { Car, Bike, Clock, Wrench, ShieldAlert, Sparkles } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import DateTimeInput24 from '../components/ui/DateTimeInput24';
+import {
+  getFutureDatetimeLocal,
+  toDatetimeLocalValue,
+} from '../lib/dateTimeFormat';
 
 interface Slot {
   id: string; // The slot_code from db
@@ -19,17 +24,24 @@ interface Vehicle {
   vehicle_type: string;
 }
 
-const getNowString = () => {
-  const now = new Date();
-  now.setMinutes(now.getMinutes() - now.getTimezoneOffset());
-  return now.toISOString().slice(0, 16);
-};
+const MIN_LEAD_HOURS = 2;
+const MAX_ADVANCE_DAYS = 3;
 
-const getFutureString = (hours: number) => {
-  const future = new Date(Date.now() + hours * 60 * 60 * 1000);
-  future.setMinutes(future.getMinutes() - future.getTimezoneOffset());
-  return future.toISOString().slice(0, 16);
-};
+interface MyReservation {
+  vehicle_id: number;
+  status: string;
+  check_out_time?: string;
+  payment_status?: string;
+}
+
+function isVehicleBusy(reservations: MyReservation[], vehicleId: number) {
+  return reservations.some((r) => {
+    if (r.vehicle_id !== vehicleId) return false;
+    if (r.status === 'pending') return true;
+    if (r.status === 'checked_in' && !(r.check_out_time && r.payment_status === 'paid')) return true;
+    return false;
+  });
+}
 
 export default function FindSlot() {
   const [slots, setSlots] = useState<Slot[]>([]);
@@ -45,11 +57,20 @@ export default function FindSlot() {
 
   const [showBookingModal, setShowBookingModal] = useState(false);
   const [selectedVehicleId, setSelectedVehicleId] = useState<number | ''>('');
-  const [reservationTime, setReservationTime] = useState(getNowString());
-  const [expectedCheckoutTime, setExpectedCheckoutTime] = useState(getFutureString(2));
+  const [reservationTime, setReservationTime] = useState(getFutureDatetimeLocal(MIN_LEAD_HOURS));
+  const [expectedCheckoutTime, setExpectedCheckoutTime] = useState(getFutureDatetimeLocal(MIN_LEAD_HOURS + 2));
   const [bookingLoading, setBookingLoading] = useState(false);
+  const [myReservations, setMyReservations] = useState<MyReservation[]>([]);
   
+  const minReservationTime = getFutureDatetimeLocal(MIN_LEAD_HOURS);
+  const maxReservationTime = getFutureDatetimeLocal(MAX_ADVANCE_DAYS * 24);
+
   const { isAuthenticated } = useAuth();
+
+  const eligibleVehicles = vehicles.filter((v) => {
+    if (v.vehicle_type !== selectedSlot?.type) return false;
+    return !isVehicleBusy(myReservations, v.id);
+  });
 
   useEffect(() => {
     fetchSlots();
@@ -79,12 +100,29 @@ export default function FindSlot() {
     }
   };
 
+  const fetchMyReservations = async () => {
+    try {
+      const response = await api.get('/reservations/my-reservations');
+      if (response.data.success) {
+        setMyReservations(response.data.data);
+      }
+    } catch {
+      // User may not be logged in
+    }
+  };
+
   const handleOpenBookingModal = () => {
     if (!isAuthenticated) {
       toast.error('Vui lòng đăng nhập để đặt chỗ');
       return;
     }
+    const defaultIn = getFutureDatetimeLocal(MIN_LEAD_HOURS);
+    const defaultOut = getFutureDatetimeLocal(MIN_LEAD_HOURS + 2);
+    setReservationTime(defaultIn);
+    setExpectedCheckoutTime(defaultOut);
+    setSelectedVehicleId('');
     fetchVehicles();
+    fetchMyReservations();
     setShowBookingModal(true);
   };
 
@@ -282,7 +320,11 @@ export default function FindSlot() {
                     slot.status === 'reserved' ? 'bg-amber-500' : 'bg-slate-600'
                   }`}></div>
                   
-                  <Car className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-primary-400 group-hover:text-primary-300' : 'text-slate-600 opacity-60'}`} />
+                  {slot.type === 'car' ? (
+                    <Car className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-primary-400 group-hover:text-primary-300' : 'text-slate-600 opacity-60'}`} />
+                  ) : (
+                    <Bike className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-orange-400 group-hover:text-orange-300' : 'text-slate-600 opacity-60'}`} />
+                  )}
                   <span className="font-bold text-lg text-slate-100 group-hover:text-primary-400 transition-colors font-mono">{slot.id}</span>
                   <span className="text-[10px] text-slate-500 mt-1 font-semibold">{slot.floor}</span>
                 </div>
@@ -375,10 +417,15 @@ export default function FindSlot() {
                 className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-850 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm cursor-pointer"
               >
                 <option value="">-- Chọn phương tiện --</option>
-                {vehicles.filter(v => v.vehicle_type === selectedSlot?.type).map(v => (
+                {eligibleVehicles.map(v => (
                   <option key={v.id} value={v.id}>{v.license_plate} ({v.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'})</option>
                 ))}
               </select>
+              {vehicles.filter(v => v.vehicle_type === selectedSlot?.type).length > 0 && eligibleVehicles.length === 0 && (
+                <p className="text-amber-400 text-xs mt-2.5">
+                  Tất cả xe loại này đang có đặt chỗ chờ hoặc đang đỗ trong bãi. Vui lòng hoàn tất lượt hiện tại trước.
+                </p>
+              )}
               {vehicles.filter(v => v.vehicle_type === selectedSlot?.type).length === 0 && (
                 <p className="text-rose-400 text-xs mt-2.5">
                   ⚠️ Bạn chưa đăng ký phương tiện loại này trong hồ sơ cá nhân. Vui lòng thêm phương tiện mới vào trang Profile để tiếp tục đặt chỗ.
@@ -388,21 +435,29 @@ export default function FindSlot() {
 
             <div className="mb-4">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Thời gian vào dự kiến</label>
-              <input 
-                type="datetime-local" 
+              <p className="text-amber-400 text-xs mb-2">Đặt trước tối thiểu 2 giờ, tối đa 3 ngày.</p>
+              <DateTimeInput24
                 value={reservationTime}
-                onChange={(e) => setReservationTime(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-850 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm cursor-pointer"
+                min={minReservationTime}
+                max={maxReservationTime}
+                onChange={(next) => {
+                  setReservationTime(next);
+                  if (next >= expectedCheckoutTime) {
+                    const bumped = new Date(next);
+                    bumped.setHours(bumped.getHours() + 2);
+                    setExpectedCheckoutTime(toDatetimeLocalValue(bumped));
+                  }
+                }}
               />
             </div>
 
             <div className="mb-6">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Thời gian ra dự kiến</label>
-              <input 
-                type="datetime-local" 
+              <DateTimeInput24
                 value={expectedCheckoutTime}
-                onChange={(e) => setExpectedCheckoutTime(e.target.value)}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-850 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm cursor-pointer"
+                min={reservationTime}
+                max={maxReservationTime}
+                onChange={setExpectedCheckoutTime}
               />
             </div>
 
@@ -415,7 +470,7 @@ export default function FindSlot() {
               </button>
               <button 
                 onClick={submitBooking}
-                disabled={bookingLoading || vehicles.filter(v => v.vehicle_type === selectedSlot?.type).length === 0}
+                disabled={bookingLoading || eligibleVehicles.length === 0}
                 className="flex-1 px-4 py-3 bg-primary-600 hover:bg-primary-700 text-white font-bold rounded-xl transition-all disabled:opacity-50 text-sm active:scale-95"
               >
                 {bookingLoading ? 'Đang đặt...' : 'Xác nhận đặt'}
