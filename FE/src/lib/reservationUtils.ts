@@ -1,4 +1,5 @@
 export interface ReservationLike {
+  id?: number;
   status: string;
   reservation_code: string;
   reservation_time: string;
@@ -11,10 +12,11 @@ export interface ReservationLike {
   total_amount?: number;
   payment_status?: string;
   payment_method?: string;
+  is_walkin_history?: number | boolean;
 }
 
 export type VehicleFilter = 'all' | 'car' | 'motorbike';
-export type StatusFilter = 'all' | 'pending' | 'checked_in' | 'completed';
+export type StatusFilter = 'all' | 'pending' | 'checked_in' | 'completed' | 'cancelled';
 export type TimePreset = 'all' | '7d' | '30d';
 
 export function isReservationCompleted(res: ReservationLike) {
@@ -123,16 +125,18 @@ export function countInLotReservations<T extends ReservationLike>(reservations: 
   return reservations.filter((r) => isInLotReservation(r)).length;
 }
 
-export function getDisplayStatus(res: ReservationLike): StatusFilter | 'expired' | 'cancelled' | 'other' {
+export function getDisplayStatus(res: ReservationLike): StatusFilter | 'expired' | 'other' {
   if (isReservationCompleted(res)) return 'completed';
+  if (res.status === 'cancelled') return 'cancelled';
   if (res.status === 'pending') return 'pending';
   if (res.status === 'checked_in') return 'checked_in';
+  if (res.status === 'expired') return 'expired';
   return 'other';
 }
 
 export function getStatusColor(status: string, res?: ReservationLike) {
   if (res && isReservationCompleted(res)) {
-    return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+    return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/25';
   }
   switch (status) {
     case 'pending':
@@ -142,9 +146,9 @@ export function getStatusColor(status: string, res?: ReservationLike) {
     case 'expired':
       return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
     case 'cancelled':
-      return 'bg-slate-800 text-slate-400 border-slate-700';
+      return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
     case 'completed':
-      return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
+      return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/25';
     default:
       return 'bg-slate-800 text-slate-400 border-slate-700';
   }

@@ -3,6 +3,8 @@ const { sql } = require('../config/db');
 const GRACE_PERIOD_MINUTES = 15;
 const MIN_LEAD_HOURS = 2;
 const MAX_ADVANCE_DAYS = 3;
+/** Hủy miễn phí nếu còn ít nhất X giờ trước giờ vào dự kiến (chỉ vé pending) */
+const CANCEL_DEADLINE_HOURS = 1;
 
 function formatDateTimeVi(date) {
     const d = new Date(date);
@@ -88,6 +90,41 @@ function getCheckInWindow(reservation_time) {
     return { start, end };
 }
 
+function getCancelDeadline(reservation_time) {
+    const deadline = new Date(reservation_time);
+    deadline.setHours(deadline.getHours() - CANCEL_DEADLINE_HOURS);
+    return deadline;
+}
+
+function assertCanCancelReservation(reservation, now = new Date()) {
+    if (reservation.status === 'cancelled') {
+        throw new Error('Đặt chỗ này đã được hủy trước đó.');
+    }
+
+    if (reservation.status === 'expired') {
+        throw new Error('Đặt chỗ đã hết hạn — không thể hủy.');
+    }
+
+    if (reservation.status === 'checked_in') {
+        throw new Error(
+            'Xe đã vào bãi — không thể hủy đặt chỗ. Vui lòng checkout tại quầy nhân viên.',
+        );
+    }
+
+    if (reservation.status !== 'pending') {
+        throw new Error('Chỉ có thể hủy đặt chỗ đang ở trạng thái chờ check-in.');
+    }
+
+    const deadline = getCancelDeadline(reservation.reservation_time);
+    if (now >= deadline) {
+        const expected = formatDateTimeVi(reservation.reservation_time);
+        throw new Error(
+            `Không thể hủy: còn dưới ${CANCEL_DEADLINE_HOURS} giờ trước giờ vào dự kiến (${expected}). ` +
+            `Vui lòng đến check-in đúng giờ hoặc để hệ thống tự hết hạn sau ${GRACE_PERIOD_MINUTES} phút kể từ giờ vào.`,
+        );
+    }
+}
+
 function validateCheckInTime(check_in_time, reservation_time) {
     const checkIn = new Date(check_in_time);
     const { start, end } = getCheckInWindow(reservation_time);
@@ -112,10 +149,13 @@ module.exports = {
     GRACE_PERIOD_MINUTES,
     MIN_LEAD_HOURS,
     MAX_ADVANCE_DAYS,
+    CANCEL_DEADLINE_HOURS,
     formatDateTimeVi,
     expireStaleReservations,
     assertVehicleCanBook,
     validateReservationTimes,
+    assertCanCancelReservation,
+    getCancelDeadline,
     validateCheckInTime,
     getCheckInWindow,
 };

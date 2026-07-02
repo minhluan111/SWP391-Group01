@@ -20,7 +20,9 @@ import PasswordStrengthBar from '../components/ui/PasswordStrengthBar';
 import PasswordMatchIndicator from '../components/ui/PasswordMatchIndicator';
 import { VehicleTypeIcon, VehiclesSectionIcon } from '../components/ui/VehicleTypeIcon';
 import ReservationTicketModal from '../components/profile/ReservationTicketModal';
+import ListPagination from '../components/ui/ListPagination';
 import { formatDateTime24 } from '../lib/dateTimeFormat';
+import { paginateList } from '../lib/pagination';
 import {
   countInLotReservations,
   countPendingReservations,
@@ -58,6 +60,7 @@ interface Reservation {
   total_amount?: number;
   payment_status?: string;
   payment_method?: string;
+  is_walkin_history?: number;
 }
 
 export default function Profile() {
@@ -105,6 +108,7 @@ export default function Profile() {
   const [vehicleFilter, setVehicleFilter] = useState<VehicleFilter>('all');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const [timePreset, setTimePreset] = useState<TimePreset>('all');
+  const [reservationPage, setReservationPage] = useState(1);
 
   useEffect(() => {
     if (user) {
@@ -265,6 +269,15 @@ export default function Profile() {
     [reservations, searchQuery, vehicleFilter, statusFilter, timePreset],
   );
 
+  const reservationPagination = useMemo(
+    () => paginateList(filteredReservations, reservationPage),
+    [filteredReservations, reservationPage],
+  );
+
+  useEffect(() => {
+    setReservationPage(1);
+  }, [searchQuery, vehicleFilter, statusFilter, timePreset, reservations.length]);
+
   const hasActiveFilters =
     searchQuery.trim() !== '' ||
     vehicleFilter !== 'all' ||
@@ -294,6 +307,7 @@ export default function Profile() {
       <ReservationTicketModal
         reservation={selectedTicket}
         onClose={() => setSelectedTicket(null)}
+        onCancelled={fetchReservations}
       />
       <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 mb-8 flex items-center gap-2">
         <User className="text-primary-500 w-8 h-8" />
@@ -727,6 +741,7 @@ export default function Profile() {
                   ['pending', 'Đang chờ'],
                   ['checked_in', 'Đã vào bãi'],
                   ['completed', 'Đã hoàn tất'],
+                  ['cancelled', 'Đã hủy'],
                 ] as const).map(([value, label]) => (
                   <button
                     key={value}
@@ -759,16 +774,16 @@ export default function Profile() {
             </div>
 
             {loadingReservations ? (
-              <div className="text-center py-12 text-slate-500">Đang tải lịch sử đặt chỗ...</div>
+              <div className="text-center py-12 text-slate-500">Đang tải lịch sử gửi xe...</div>
             ) : reservations.length === 0 ? (
               <div className="text-center py-16 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
                 <Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 font-medium">Bạn chưa thực hiện lượt đặt chỗ nào.</p>
+                <p className="text-slate-400 font-medium">Chưa có lịch sử gửi xe.</p>
               </div>
             ) : filteredReservations.length === 0 ? (
               <div className="text-center py-16 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
                 <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 font-medium">Không tìm thấy đặt chỗ phù hợp bộ lọc.</p>
+                <p className="text-slate-400 font-medium">Không tìm thấy lượt gửi xe phù hợp bộ lọc.</p>
                 <button
                   type="button"
                   onClick={clearFilters}
@@ -780,7 +795,14 @@ export default function Profile() {
             ) : (
               <div className="overflow-x-auto">
                 <p className="text-xs text-slate-500 mb-3">
-                  Hiển thị {filteredReservations.length} / {reservations.length} lượt đặt chỗ
+                  <span className="text-slate-400">Trang {reservationPagination.page}</span>
+                  {' · '}
+                  <span className="text-slate-200 font-medium">
+                    {reservationPagination.rangeStart}–{reservationPagination.rangeEnd}
+                  </span>
+                  {' / '}
+                  <span className="text-slate-200 font-medium">{reservationPagination.total}</span>
+                  {' lượt gửi xe'}
                 </p>
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
@@ -794,7 +816,7 @@ export default function Profile() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-850">
-                    {filteredReservations.map((res) => {
+                    {reservationPagination.items.map((res) => {
                       const showQr = shouldShowTicketQr(res);
                       const ticketGlassClass = getTicketGlassClass(res);
                       const TicketIcon = showQr ? QrCode : Ticket;
@@ -821,6 +843,23 @@ export default function Profile() {
                             <span className="text-xs text-slate-400 capitalize">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
                           </td>
                           <td className="py-4 text-xs text-slate-300 space-y-1">
+                            {res.is_walkin_history ? (
+                              <>
+                                {res.check_in_time && (
+                                  <div className="text-blue-400">
+                                    <span className="text-slate-500">Vào bãi: </span>
+                                    {formatDateTime24(res.check_in_time)}
+                                  </div>
+                                )}
+                                {res.check_out_time && (
+                                  <div className="text-emerald-400">
+                                    <span className="text-slate-500">Ra bãi: </span>
+                                    {formatDateTime24(res.check_out_time)}
+                                  </div>
+                                )}
+                              </>
+                            ) : (
+                              <>
                             <div>
                               <span className="text-slate-500">Đặt: </span>
                               {formatDateTime24(res.reservation_time)}
@@ -843,11 +882,13 @@ export default function Profile() {
                                 {formatDateTime24(res.check_out_time)}
                               </div>
                             )}
+                              </>
+                            )}
                           </td>
                           <td className="py-4 text-xs text-slate-300">
                             {res.total_amount !== undefined && res.total_amount !== null ? (
                               <div className="space-y-1">
-                                <div className="font-bold text-slate-100">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
+                                <div className="font-bold text-amber-300 text-base">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
                                 <div className="text-[9px] text-slate-400 flex items-center gap-1.5 mt-0.5">
                                   <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 uppercase font-semibold">
                                     {res.payment_method === 'cash' ? 'Tiền mặt' : 'Online'}
@@ -871,6 +912,11 @@ export default function Profile() {
                     })}
                   </tbody>
                 </table>
+                <ListPagination
+                  page={reservationPagination.page}
+                  totalPages={reservationPagination.totalPages}
+                  onPageChange={setReservationPage}
+                />
               </div>
             )}
           </div>

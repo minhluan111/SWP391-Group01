@@ -1,7 +1,7 @@
 import { z } from 'zod';
+import { LICENSE_PLATE_REGEX, VIETNAMESE_PHONE_REGEX } from '../lib/validation';
 
-const vietnamesePhoneRegex = /^(0)(3|5|7|8|9)[0-9]{8}$/;
-
+const vietnamesePhoneRegex = VIETNAMESE_PHONE_REGEX;
 export const loginSchema = z.object({
   email: z
     .string()
@@ -76,8 +76,7 @@ export const changePasswordSchema = z
 export type ChangePasswordFormData = z.infer<typeof changePasswordSchema>;
 
 // Biển số VN: VD 51F-12345 (4-5 số), 29A-123.45 (dạng có dấu chấm)
-const licensePlateRegex = /^[0-9]{2}[A-Z]{1,2}[0-9]?-(?:[0-9]{4,5}|[0-9]{3}\.[0-9]{2})$/;
-
+const licensePlateRegex = LICENSE_PLATE_REGEX;
 export const vehicleSchema = z.object({
   license_plate: z
     .string()

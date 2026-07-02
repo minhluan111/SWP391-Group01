@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import DateTimeInput24 from '../components/ui/DateTimeInput24';
+import { CANCEL_POLICY_SUMMARY } from '../lib/reservationCancelPolicy';
 import {
   getFutureDatetimeLocal,
   toDatetimeLocalValue,
@@ -435,7 +436,9 @@ export default function FindSlot() {
 
             <div className="mb-4">
               <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Thời gian vào dự kiến</label>
-              <p className="text-amber-400 text-xs mb-2">Đặt trước tối thiểu 2 giờ, tối đa 3 ngày.</p>
+              <p className="text-amber-400 text-xs mb-2">
+                Đặt trước tối thiểu 2 giờ, tối đa 3 ngày. {CANCEL_POLICY_SUMMARY}
+              </p>
               <DateTimeInput24
                 value={reservationTime}
                 min={minReservationTime}

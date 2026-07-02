@@ -110,6 +110,9 @@ async function seed() {
             }
         }
 
+        const { ensureGuestUser } = require('./utils/guestUser');
+        await ensureGuestUser(pool);
+
         console.log('Seeding completed successfully!');
         process.exit(0);
 

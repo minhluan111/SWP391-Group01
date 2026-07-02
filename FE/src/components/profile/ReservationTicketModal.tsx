@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { QrCode, Ticket, X } from 'lucide-react';
+import { QrCode, Ticket, X, Ban } from 'lucide-react';
 import {
   getFloorLabel,
   getQrCodeCaption,
@@ -13,22 +13,35 @@ import {
   type ReservationLike,
 } from '../../lib/reservationUtils';
 import { formatDateTime24 } from '../../lib/dateTimeFormat';
+import {
+  getCancelEligibility,
+} from '../../lib/reservationCancelPolicy';
+import CancelReservationConfirmDialog from './CancelReservationConfirmDialog';
+import api from '../../services/api';
+import toast from 'react-hot-toast';
 
 interface ReservationTicketModalProps {
-  reservation: ReservationLike | null;
+  reservation: (ReservationLike & { id: number }) | null;
   onClose: () => void;
+  onCancelled?: () => void;
 }
 
 function formatDateTime(value?: string) {
   return formatDateTime24(value);
 }
 
-export default function ReservationTicketModal({ reservation, onClose }: ReservationTicketModalProps) {
+export default function ReservationTicketModal({ reservation, onClose, onCancelled }: ReservationTicketModalProps) {
+  const [cancelling, setCancelling] = useState(false);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+
   useEffect(() => {
     if (!reservation) return;
 
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
+      if (e.key === 'Escape') {
+        if (showCancelConfirm) setShowCancelConfirm(false);
+        else onClose();
+      }
     };
 
     document.body.style.overflow = 'hidden';
@@ -37,13 +50,34 @@ export default function ReservationTicketModal({ reservation, onClose }: Reserva
       document.body.style.overflow = '';
       window.removeEventListener('keydown', handleKeyDown);
     };
-  }, [reservation, onClose]);
+  }, [reservation, onClose, showCancelConfirm]);
 
   const showQr = reservation ? shouldShowTicketQr(reservation) : false;
   const qrValue = reservation ? getQrCodeValue(reservation) : null;
   const completed = reservation ? isReservationCompleted(reservation) : false;
   const inLot = reservation ? isInLotReservation(reservation) : false;
   const sessionTicket = reservation ? hasSessionTicket(reservation) : false;
+  const isWalkInHistory = Boolean(reservation?.is_walkin_history);
+  const cancelInfo = reservation ? getCancelEligibility(reservation) : null;
+  const isPending = reservation?.status === 'pending';
+
+  const handleCancel = async () => {
+    if (!reservation || !cancelInfo?.canCancel) return;
+
+    setCancelling(true);
+    try {
+      const response = await api.post(`/reservations/${reservation.id}/cancel`);
+      toast.success(response.data.message || 'Đã hủy đặt chỗ thành công');
+      setShowCancelConfirm(false);
+      onCancelled?.();
+      onClose();
+    } catch (error: unknown) {
+      const err = error as { response?: { data?: { message?: string } } };
+      toast.error(err.response?.data?.message || 'Không thể hủy đặt chỗ');
+    } finally {
+      setCancelling(false);
+    }
+  };
 
   return (
     <AnimatePresence>
@@ -94,26 +128,45 @@ export default function ReservationTicketModal({ reservation, onClose }: Reserva
                 </div>
 
                 <div className="space-y-3">
-                  <div
-                    className={`rounded-xl border px-4 py-3 ${
-                      sessionTicket
-                        ? 'border-slate-700/80 bg-slate-900/40'
-                        : 'border-amber-500/25 bg-amber-500/5'
-                    }`}
-                  >
-                    <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">
-                      Mã đặt chỗ
-                    </span>
-                    <h3
-                      id="ticket-modal-title"
-                      className="text-xl md:text-2xl font-black text-slate-100 tracking-tight font-mono break-all"
+                  {isWalkInHistory ? (
+                    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400/80 block mb-1">
+                        Loại vé
+                      </span>
+                      <h3
+                        id="ticket-modal-title"
+                        className="text-lg md:text-xl font-bold text-emerald-100"
+                      >
+                        Vé check-in trực tiếp
+                      </h3>
+                      {reservation.check_in_time && (
+                        <p className="text-xs text-slate-400 mt-1">
+                          Giờ vào bãi: {formatDateTime(reservation.check_in_time)}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <div
+                      className={`rounded-xl border px-4 py-3 ${
+                        sessionTicket
+                          ? 'border-slate-700/80 bg-slate-900/40'
+                          : 'border-amber-500/25 bg-amber-500/5'
+                      }`}
                     >
-                      {reservation.reservation_code}
-                    </h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Đặt chỗ lúc: {formatDateTime(reservation.reservation_time)}
-                    </p>
-                  </div>
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">
+                        Mã đặt chỗ
+                      </span>
+                      <h3
+                        id="ticket-modal-title"
+                        className="text-xl md:text-2xl font-black text-slate-100 tracking-tight font-mono break-all"
+                      >
+                        {reservation.reservation_code}
+                      </h3>
+                      <p className="text-xs text-slate-400 mt-1">
+                        Giờ vào dự kiến: {formatDateTime(reservation.reservation_time)}
+                      </p>
+                    </div>
+                  )}
 
                   {sessionTicket && (
                     <div className="rounded-xl border border-blue-500/25 bg-blue-500/5 px-4 py-3">
@@ -211,16 +264,46 @@ export default function ReservationTicketModal({ reservation, onClose }: Reserva
                   </p>
                 )}
 
+                {isPending && cancelInfo && (
+                  <div
+                    className={`text-xs rounded-lg px-3 py-2 border ${
+                      cancelInfo.canCancel
+                        ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
+                        : 'text-orange-300 bg-orange-500/10 border-orange-500/25'
+                    }`}
+                  >
+                    {cancelInfo.message}
+                  </div>
+                )}
+
+                {reservation.status === 'cancelled' && (
+                  <p className="text-xs text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2">
+                    Đặt chỗ đã hủy — chỉ xem lại thông tin vé.
+                  </p>
+                )}
+
                 {completed && (
                   <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
                     Vé đã hoàn tất — chỉ xem lại thông tin, không còn mã QR.
                   </p>
                 )}
 
-                {!showQr && !completed && (
+                {!showQr && !completed && reservation.status !== 'cancelled' && (
                   <p className="text-xs text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2">
                     Trạng thái: {getStatusText(reservation.status, reservation)} — chỉ xem lại thông tin vé.
                   </p>
+                )}
+
+                {isPending && cancelInfo?.canCancel && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelConfirm(true)}
+                    disabled={cancelling}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-semibold text-sm transition-colors disabled:opacity-50"
+                  >
+                    <Ban className="w-4 h-4" />
+                    Hủy đặt chỗ
+                  </button>
                 )}
               </div>
 
@@ -243,6 +326,15 @@ export default function ReservationTicketModal({ reservation, onClose }: Reserva
 
             <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-r border-slate-700" />
             <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-l border-slate-700" />
+
+            <CancelReservationConfirmDialog
+              open={showCancelConfirm}
+              reservationCode={reservation.reservation_code}
+              slotCode={reservation.slot_code}
+              loading={cancelling}
+              onConfirm={handleCancel}
+              onCancel={() => setShowCancelConfirm(false)}
+            />
           </motion.div>
         </motion.div>
       )}

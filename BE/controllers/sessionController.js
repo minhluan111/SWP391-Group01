@@ -3,6 +3,10 @@ const {
     expireStaleReservations,
     validateCheckInTime,
 } = require('../utils/reservationRules');
+const { resolveVehicleForWalkIn, GUEST_EMAIL } = require('../utils/guestUser');
+const { validateOptionalPhone, validateWalkInCheckInTime } = require('../utils/validation');
+const { buildCustomerDisplayFields, getCustomerTypeSqlFilter } = require('../utils/customerDisplay');
+const { buildTodayFilter, applyTodayRangeInput } = require('../utils/dateFilters');
 
 // Helper to calculate fee based on vehicle type and check-in time
 const calculateFee = async (pool, vehicle_type, check_in_time, check_out_time) => {
@@ -129,6 +133,7 @@ const checkIn = async (req, res) => {
         }
 
         const ticket_code = 'TICKET-' + Date.now();
+        const vehicle_photo_url = req.body.vehicle_photo_url || null;
 
         await pool.request()
             .input('ticket_code', sql.VarChar, ticket_code)
@@ -137,9 +142,10 @@ const checkIn = async (req, res) => {
             .input('reservation_id', sql.Int, reservation_id || null)
             .input('check_in_time', sql.DateTime, check_in_time)
             .input('staff_in_id', sql.Int, staff_id)
+            .input('vehicle_photo_url', sql.VarChar, vehicle_photo_url)
             .query(`
-                INSERT INTO parking_sessions (ticket_code, vehicle_id, slot_id, reservation_id, check_in_time, status, staff_in_id)
-                VALUES (@ticket_code, @vehicle_id, @slot_id, @reservation_id, @check_in_time, 'active', @staff_in_id)
+                INSERT INTO parking_sessions (ticket_code, vehicle_id, slot_id, reservation_id, check_in_time, status, staff_in_id, vehicle_photo_url)
+                VALUES (@ticket_code, @vehicle_id, @slot_id, @reservation_id, @check_in_time, 'active', @staff_in_id, @vehicle_photo_url)
             `);
 
         await pool.request()
@@ -155,11 +161,195 @@ const checkIn = async (req, res) => {
         res.json({
             success: true,
             message: `Check-in thành công! Mã vé vào bãi: ${ticket_code}`,
-            data: { ticket_code, check_in_time },
+            data: { ticket_code, check_in_time, vehicle_photo_url },
         });
     } catch (err) {
         console.error(err);
         res.status(500).json({ success: false, message: 'Lỗi server khi check-in' });
+    }
+};
+
+const walkInCheckIn = async (req, res) => {
+    try {
+        const { license_plate, vehicle_type, slot_id, check_in_time: checkInTimeInput, guest_phone } = req.body;
+        const staff_id = req.user.id;
+        const pool = await poolPromise;
+
+        if (!license_plate || !vehicle_type || !slot_id) {
+            return res.status(400).json({ message: 'Vui lòng nhập biển số, loại xe và chọn ô đỗ.' });
+        }
+
+        const phoneError = validateOptionalPhone(guest_phone);
+        if (phoneError) {
+            return res.status(400).json({ message: phoneError });
+        }
+        const normalizedGuestPhone = guest_phone ? String(guest_phone).trim() : null;
+
+        if (!['car', 'motorbike'].includes(vehicle_type)) {
+            return res.status(400).json({ message: 'Loại xe không hợp lệ.' });
+        }
+
+        await expireStaleReservations(pool);
+
+        const slotId = parseInt(slot_id, 10);
+        const checkSlot = await pool.request()
+            .input('slot_id', sql.Int, slotId)
+            .query('SELECT status, vehicle_type FROM parking_slots WHERE id = @slot_id');
+
+        if (checkSlot.recordset.length === 0) {
+            return res.status(404).json({ message: 'Không tìm thấy vị trí đỗ xe này' });
+        }
+
+        const slot = checkSlot.recordset[0];
+        if (slot.vehicle_type !== vehicle_type) {
+            return res.status(400).json({ message: 'Loại xe không phù hợp với tầng/ô đỗ đã chọn.' });
+        }
+
+        if (slot.status !== 'available') {
+            return res.status(400).json({ message: 'Ô đỗ không còn trống.' });
+        }
+
+        let vehicle_id;
+        try {
+            vehicle_id = await resolveVehicleForWalkIn(pool, license_plate, vehicle_type);
+        } catch (err) {
+            return res.status(400).json({ message: err.message });
+        }
+
+        const activeSession = await pool.request()
+            .input('vehicle_id', sql.Int, vehicle_id)
+            .query(`
+                SELECT TOP 1 ticket_code FROM parking_sessions
+                WHERE vehicle_id = @vehicle_id AND status = 'active'
+            `);
+
+        if (activeSession.recordset.length > 0) {
+            return res.status(400).json({
+                message: `Xe đang có phiên đỗ hoạt động (${activeSession.recordset[0].ticket_code}). Vui lòng checkout trước.`,
+            });
+        }
+
+        let check_in_time = checkInTimeInput ? new Date(checkInTimeInput) : new Date();
+        const timeError = validateWalkInCheckInTime(check_in_time);
+        if (timeError) {
+            return res.status(400).json({ message: timeError });
+        }
+
+        const ticket_code = 'TICKET-' + Date.now();
+        const vehicle_photo_url = req.file ? `/uploads/vehicle-photos/${req.file.filename}` : null;
+
+        await pool.request()
+            .input('ticket_code', sql.VarChar, ticket_code)
+            .input('vehicle_id', sql.Int, vehicle_id)
+            .input('slot_id', sql.Int, slotId)
+            .input('check_in_time', sql.DateTime, check_in_time)
+            .input('staff_in_id', sql.Int, staff_id)
+            .input('vehicle_photo_url', sql.VarChar, vehicle_photo_url)
+            .input('guest_phone', sql.VarChar, normalizedGuestPhone)
+            .query(`
+                INSERT INTO parking_sessions (ticket_code, vehicle_id, slot_id, reservation_id, check_in_time, status, staff_in_id, vehicle_photo_url, guest_phone)
+                VALUES (@ticket_code, @vehicle_id, @slot_id, NULL, @check_in_time, 'active', @staff_in_id, @vehicle_photo_url, @guest_phone)
+            `);
+
+        await pool.request()
+            .input('slot_id', sql.Int, slotId)
+            .query("UPDATE parking_slots SET status = 'occupied' WHERE id = @slot_id");
+
+        const vehicleInfo = await pool.request()
+            .input('vehicle_id', sql.Int, vehicle_id)
+            .query('SELECT license_plate, vehicle_type FROM vehicles WHERE id = @vehicle_id');
+
+        const slotInfo = await pool.request()
+            .input('slot_id', sql.Int, slotId)
+            .query(`
+                SELECT s.slot_code, f.floor_name
+                FROM parking_slots s
+                JOIN floors f ON s.floor_id = f.id
+                WHERE s.id = @slot_id
+            `);
+
+        res.json({
+            success: true,
+            message: `Tạo vé thành công! Mã vé: ${ticket_code}`,
+            data: {
+                ticket_code,
+                check_in_time,
+                vehicle_photo_url,
+                license_plate: vehicleInfo.recordset[0]?.license_plate,
+                vehicle_type: vehicleInfo.recordset[0]?.vehicle_type,
+                slot_code: slotInfo.recordset[0]?.slot_code,
+                floor_name: slotInfo.recordset[0]?.floor_name,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Lỗi server khi check-in trực tiếp' });
+    }
+};
+
+const previewCheckOut = async (req, res) => {
+    try {
+        const { session_id, check_out_time: checkOutTimeInput } = req.body;
+        const pool = await poolPromise;
+
+        const sessionRes = await pool.request()
+            .input('session_id', sql.Int, session_id)
+            .query(`
+                SELECT ps.id, ps.ticket_code, ps.check_in_time, ps.status,
+                       ps.vehicle_photo_url,
+                       v.vehicle_type, v.license_plate, s.slot_code
+                FROM parking_sessions ps
+                JOIN vehicles v ON ps.vehicle_id = v.id
+                JOIN parking_slots s ON ps.slot_id = s.id
+                WHERE ps.id = @session_id AND ps.status = 'active'
+            `);
+
+        if (sessionRes.recordset.length === 0) {
+            return res.status(400).json({ message: 'Không tìm thấy phiên đỗ xe đang hoạt động' });
+        }
+
+        const session = sessionRes.recordset[0];
+        const check_in_time = new Date(session.check_in_time);
+        let check_out_time = checkOutTimeInput ? new Date(checkOutTimeInput) : new Date();
+
+        if (isNaN(check_out_time.getTime())) {
+            return res.status(400).json({ message: 'Thời gian check-out không hợp lệ.' });
+        }
+
+        if (check_out_time < check_in_time) {
+            return res.status(400).json({
+                message: 'Giờ ra bãi phải sau giờ vào bãi. Vui lòng kiểm tra lại thời gian check-out.',
+            });
+        }
+
+        let feeDetail;
+        try {
+            feeDetail = await calculateFee(pool, session.vehicle_type, check_in_time, check_out_time);
+        } catch (err) {
+            return res.status(400).json({ message: err.message });
+        }
+
+        res.json({
+            success: true,
+            data: {
+                session_id: session.id,
+                ticket_code: session.ticket_code,
+                license_plate: session.license_plate,
+                vehicle_type: session.vehicle_type,
+                slot_code: session.slot_code,
+                check_in_time: session.check_in_time,
+                check_out_time: check_out_time.toISOString(),
+                vehicle_photo_url: session.vehicle_photo_url
+                    ? String(session.vehicle_photo_url)
+                    : null,
+                total_hours: feeDetail.hours,
+                hourly_rate: feeDetail.rate,
+                total_amount: feeDetail.total_amount,
+            },
+        });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ success: false, message: 'Lỗi server khi tính phí' });
     }
 };
 
@@ -277,10 +467,11 @@ const searchBookingOrSession = async (req, res) => {
         const sessionRes = await pool.request()
             .input('query', sql.VarChar, `%${query}%`)
             .query(`
-                SELECT ps.id as session_id, ps.ticket_code, ps.check_in_time, ps.status,
+                SELECT ps.id as session_id, ps.ticket_code, ps.check_in_time, ps.status, ps.vehicle_photo_url,
+                       ps.guest_phone, ps.reservation_id,
                        v.id as vehicle_id, v.license_plate, v.vehicle_type,
                        s.id as slot_id, s.slot_code,
-                       u.full_name as customer_name, u.phone as customer_phone
+                       u.full_name as customer_name, u.phone as customer_phone, u.email as customer_email
                 FROM parking_sessions ps
                 JOIN vehicles v ON ps.vehicle_id = v.id
                 JOIN parking_slots s ON ps.slot_id = s.id
@@ -288,11 +479,22 @@ const searchBookingOrSession = async (req, res) => {
                 WHERE ps.status = 'active' AND (ps.ticket_code LIKE @query OR v.license_plate LIKE @query OR s.slot_code LIKE @query)
             `);
 
+        const activeSessions = sessionRes.recordset.map((row) => ({
+            ...row,
+            ...buildCustomerDisplayFields({
+                customer_name: row.customer_name,
+                customer_phone: row.customer_phone,
+                owner_email: row.customer_email,
+                guest_phone: row.guest_phone,
+                reservation_id: row.reservation_id,
+            }),
+        }));
+
         res.json({
             success: true,
             data: {
                 reservations: reservationRes.recordset,
-                activeSessions: sessionRes.recordset
+                activeSessions,
             }
         });
     } catch (err) {
@@ -307,14 +509,15 @@ const getDailyLog = async (req, res) => {
         const pool = await poolPromise;
         const preset = req.query.preset || 'today';
         const status = req.query.status || 'all';
+        const customerType = req.query.customer_type || 'all';
         const query = (req.query.query || '').trim();
 
         let dateFilter = '';
+        let todayLocalDate = null;
         if (preset === 'today') {
-            dateFilter = `AND (
-                CAST(ps.check_in_time AS DATE) = CAST(GETDATE() AS DATE)
-                OR CAST(ps.check_out_time AS DATE) = CAST(GETDATE() AS DATE)
-            )`;
+            const todayFilter = buildTodayFilter(req.query.local_date);
+            dateFilter = todayFilter.sql;
+            todayLocalDate = todayFilter.localDate;
         } else if (preset === '7d') {
             dateFilter = 'AND ps.check_in_time >= DATEADD(day, -7, GETDATE())';
         }
@@ -326,30 +529,41 @@ const getDailyLog = async (req, res) => {
             statusFilter = "AND ps.status = 'completed'";
         }
 
+        const customerTypeFilter = getCustomerTypeSqlFilter(customerType);
+
         const baseFrom = `
             FROM parking_sessions ps
             JOIN vehicles v ON ps.vehicle_id = v.id
             JOIN parking_slots s ON ps.slot_id = s.id
+            LEFT JOIN users u_owner ON v.user_id = u_owner.id
             LEFT JOIN users u_in ON ps.staff_in_id = u_in.id
             LEFT JOIN users u_out ON ps.staff_out_id = u_out.id
-            WHERE 1=1 ${dateFilter}
+            WHERE 1=1 ${dateFilter} ${customerTypeFilter}
         `;
 
-        const countResult = await pool.request().query(`
-            SELECT COUNT(*) as total FROM parking_sessions ps
-            WHERE 1=1 ${dateFilter}
+        const countRequest = pool.request().input('guest_email', sql.VarChar, GUEST_EMAIL);
+        applyTodayRangeInput(countRequest, sql, todayLocalDate);
+        const countResult = await countRequest.query(`
+            SELECT COUNT(*) as total
+            FROM parking_sessions ps
+            JOIN vehicles v ON ps.vehicle_id = v.id
+            LEFT JOIN users u_owner ON v.user_id = u_owner.id
+            WHERE 1=1 ${dateFilter} ${customerTypeFilter}
         `);
         const totalInPreset = countResult.recordset[0].total;
 
         let dataQuery = `
             SELECT TOP 200 ps.id, ps.ticket_code, ps.check_in_time, ps.check_out_time, ps.total_hours, ps.total_amount, ps.status,
+                   ps.guest_phone, ps.reservation_id,
                    v.license_plate, v.vehicle_type, s.slot_code,
+                   u_owner.email as owner_email, u_owner.full_name as customer_name, u_owner.phone as customer_phone,
                    u_in.full_name as staff_in_name, u_out.full_name as staff_out_name
             ${baseFrom}
             ${statusFilter}
         `;
 
-        const request = pool.request();
+        const request = pool.request().input('guest_email', sql.VarChar, GUEST_EMAIL);
+        applyTodayRangeInput(request, sql, todayLocalDate);
         if (query) {
             dataQuery += ` AND (
                 ps.ticket_code LIKE @query
@@ -364,15 +578,28 @@ const getDailyLog = async (req, res) => {
 
         const result = await request.query(dataQuery);
 
+        const data = result.recordset.map((row) => ({
+            ...row,
+            ...buildCustomerDisplayFields({
+                customer_name: row.customer_name,
+                customer_phone: row.customer_phone,
+                owner_email: row.owner_email,
+                guest_phone: row.guest_phone,
+                reservation_id: row.reservation_id,
+            }),
+        }));
+
         res.json({
             success: true,
-            data: result.recordset,
+            data,
             meta: {
                 totalInPreset,
-                filteredCount: result.recordset.length,
+                filteredCount: data.length,
                 preset,
                 status,
+                customer_type: customerType,
                 query,
+                local_date: todayLocalDate ?? req.query.local_date ?? null,
             },
         });
     } catch (err) {
@@ -383,7 +610,9 @@ const getDailyLog = async (req, res) => {
 
 module.exports = {
     checkIn,
+    walkInCheckIn,
+    previewCheckOut,
     checkOut,
     searchBookingOrSession,
-    getDailyLog
+    getDailyLog,
 };

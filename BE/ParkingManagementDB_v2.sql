@@ -100,6 +100,8 @@ CREATE TABLE parking_sessions (
     status VARCHAR(20) NOT NULL DEFAULT 'active',
     staff_in_id INT NULL,  -- [BỔ SUNG] Bảo vệ/Nhân viên cho vào
     staff_out_id INT NULL, -- [BỔ SUNG] Bảo vệ/Nhân viên cho ra
+    vehicle_photo_url VARCHAR(500) NULL,
+    guest_phone VARCHAR(15) NULL,
     created_at DATETIME DEFAULT GETDATE(),
     CONSTRAINT CHK_sessions_status CHECK (status IN ('active', 'completed')),
     CONSTRAINT FK_parking_sessions_vehicles FOREIGN KEY (vehicle_id) REFERENCES vehicles(id),

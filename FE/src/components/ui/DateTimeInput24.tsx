@@ -30,8 +30,9 @@ export default function DateTimeInput24({ value, onChange, min, max, className =
         type="time"
         value={time}
         step={60}
+        lang="vi-VN"
         onChange={(e) => onChange(combineDateAndTime(date, e.target.value))}
-        className={`${inputClass} sm:w-36`}
+        className={`${inputClass} sm:w-36 [color-scheme:dark]`}
       />
     </div>
   );

@@ -50,4 +50,15 @@ router.post('/', verifyToken, reservationController.createReservation);
  */
 router.get('/my-reservations', verifyToken, reservationController.getMyReservations);
 
+/**
+ * @swagger
+ * /api/reservations/{id}/cancel:
+ *   post:
+ *     summary: Cancel a pending reservation (user must cancel at least 1h before check-in)
+ *     tags: [Reservations]
+ *     security:
+ *       - bearerAuth: []
+ */
+router.post('/:id/cancel', verifyToken, reservationController.cancelReservation);
+
 module.exports = router;

@@ -1,23 +1,38 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { Search, LogIn, LogOut, FileText, ClipboardList, CheckCircle, Car, RefreshCw, X } from 'lucide-react';
 import api from '../services/api';
 import toast from 'react-hot-toast';
 import DateTimeInput24 from '../components/ui/DateTimeInput24';
+import QrScannerPanel from '../components/staff/QrScannerPanel';
+import WalkInCheckInForm, { type WalkInTicketData } from '../components/staff/WalkInCheckInForm';
+import WalkInTicketModal from '../components/staff/WalkInTicketModal';
+import { assetUrl } from '../lib/apiBase';
 import {
   datetimeLocalToIso,
   formatDateTime24,
   formatTime24,
+  getDefaultCheckoutDatetimeLocal,
+  getLocalDateParam,
   getNowDatetimeLocal,
+  isCheckoutBeforeCheckIn,
   toDatetimeLocalValue,
 } from '../lib/dateTimeFormat';
+import { formatCustomerName, formatCustomerPhone, getCustomerTypeLabel, resolveCustomerType } from '../lib/customerDisplay';
+import ListPagination from '../components/ui/ListPagination';
+import { paginateList } from '../lib/pagination';
 
 export default function StaffDashboard() {
   const [activeTab, setActiveTab] = useState<'checkin' | 'checkout' | 'logs'>('checkin');
+  const [checkInMode, setCheckInMode] = useState<'reservation' | 'walkin'>('reservation');
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<{
     reservations: any[];
     activeSessions: any[];
   }>({ reservations: [], activeSessions: [] });
+
+  const [walkInTicket, setWalkInTicket] = useState<WalkInTicketData | null>(null);
+  const [checkoutPreview, setCheckoutPreview] = useState<any | null>(null);
+  const [previewLoading, setPreviewLoading] = useState(false);
 
   const [dailyLogs, setDailyLogs] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -37,8 +52,9 @@ export default function StaffDashboard() {
 
   const [logPreset, setLogPreset] = useState<'today' | '7d' | 'all'>('today');
   const [logStatus, setLogStatus] = useState<'all' | 'active' | 'completed'>('all');
+  const [logCustomerType, setLogCustomerType] = useState<'all' | 'walkin' | 'unregistered' | 'account'>('all');
   const [logSearch, setLogSearch] = useState('');
-  const [logsMeta, setLogsMeta] = useState({ totalInPreset: 0, filteredCount: 0 });
+  const [logPage, setLogPage] = useState(1);
 
   const formatLogDateTime = (value?: string | null) => {
     if (!value) return '—';
@@ -52,22 +68,18 @@ export default function StaffDashboard() {
       const params = new URLSearchParams({
         preset: logPreset,
         status: logStatus,
+        customer_type: logCustomerType,
       });
       if (logSearch.trim()) params.set('query', logSearch.trim());
+      if (logPreset === 'today') params.set('local_date', getLocalDateParam());
       const response = await api.get(`/sessions/daily-log?${params.toString()}`);
       setDailyLogs(response.data.data);
-      setLogsMeta(
-        response.data.meta ?? {
-          totalInPreset: response.data.data?.length ?? 0,
-          filteredCount: response.data.data?.length ?? 0,
-        },
-      );
     } catch {
       toast.error('Lỗi khi tải nhật ký lượt đỗ');
     } finally {
       setLogsLoading(false);
     }
-  }, [logPreset, logStatus, logSearch]);
+  }, [logPreset, logStatus, logCustomerType, logSearch]);
 
   useEffect(() => {
     if (activeTab === 'logs') {
@@ -75,7 +87,16 @@ export default function StaffDashboard() {
     }
     // Chỉ tự tải lại khi đổi tab / preset / status; tìm kiếm bấm nút Tìm
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeTab, logPreset, logStatus]);
+  }, [activeTab, logPreset, logStatus, logCustomerType]);
+
+  const logPagination = useMemo(
+    () => paginateList(dailyLogs, logPage),
+    [dailyLogs, logPage],
+  );
+
+  useEffect(() => {
+    setLogPage(1);
+  }, [logPreset, logStatus, logCustomerType, logSearch, dailyLogs.length]);
 
   useEffect(() => {
     const next: Record<number, string> = {};
@@ -90,10 +111,12 @@ export default function StaffDashboard() {
   useEffect(() => {
     const next: Record<number, string> = {};
     searchResults.activeSessions.forEach((session) => {
-      next[session.session_id] = checkOutTimes[session.session_id] ?? getNowDatetimeLocal();
+      next[session.session_id] =
+        checkOutTimes[session.session_id] ??
+        getDefaultCheckoutDatetimeLocal(session.check_in_time);
     });
     if (searchResults.activeSessions.length > 0) {
-      setCheckOutTimes((prev) => ({ ...next, ...prev }));
+      setCheckOutTimes((prev) => ({ ...prev, ...next }));
     }
   }, [searchResults.activeSessions]);
 
@@ -110,9 +133,9 @@ export default function StaffDashboard() {
     setCheckOutTimes((prev) => ({ ...prev, [sessionId]: value }));
   }, []);
 
-  const useNowForCheckOut = useCallback((sessionId: number) => {
-    setCheckOutTimeFor(sessionId, getNowDatetimeLocal());
-    toast.success('Đã điền thời gian hiện tại làm giờ check-out.');
+  const useNowForCheckOut = useCallback((sessionId: number, checkInTime: string) => {
+    setCheckOutTimeFor(sessionId, getDefaultCheckoutDatetimeLocal(checkInTime));
+    toast.success('Đã điền giờ ra hợp lệ (sau giờ vào bãi).');
   }, [setCheckOutTimeFor]);
 
   const handleLogSearch = (e?: React.FormEvent) => {
@@ -129,14 +152,19 @@ export default function StaffDashboard() {
 
   const handleSearch = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!searchQuery.trim()) {
-      toast.error('Vui lòng nhập mã đặt chỗ, biển số hoặc mã slot');
+    await runSearch(searchQuery);
+  };
+
+  const runSearch = async (query: string) => {
+    if (!query.trim()) {
+      toast.error('Vui lòng nhập mã vé, biển số hoặc mã slot');
       return;
     }
 
     setLoading(true);
+    setCheckoutPreview(null);
     try {
-      const response = await api.get(`/sessions/search?query=${searchQuery}`);
+      const response = await api.get(`/sessions/search?query=${encodeURIComponent(query.trim())}`);
       setSearchResults(response.data.data);
       if (response.data.data.reservations.length === 0 && response.data.data.activeSessions.length === 0) {
         toast.error('Không tìm thấy bản ghi nào khớp');
@@ -148,6 +176,12 @@ export default function StaffDashboard() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleQrScan = (text: string) => {
+    setSearchQuery(text);
+    toast.success(`Đã quét: ${text}`);
+    void runSearch(text);
   };
 
   const handleCheckIn = async (res: any) => {
@@ -173,21 +207,48 @@ export default function StaffDashboard() {
     }
   };
 
-  const requestCheckoutInvoice = async (session: any) => {
-    const checkOutTime = checkOutTimes[session.session_id] || getNowDatetimeLocal();
-    setSelectedSession(session);
-    setCheckoutLoading(true);
+  const handlePreviewCheckout = async (session: any) => {
+    const checkOutTime =
+      checkOutTimes[session.session_id] ?? getDefaultCheckoutDatetimeLocal(session.check_in_time);
+
+    if (isCheckoutBeforeCheckIn(session.check_in_time, checkOutTime)) {
+      toast.error(
+        `Giờ ra (${formatDateTime24(checkOutTime)}) phải sau giờ vào (${formatDateTime24(session.check_in_time)}). Hãy chỉnh giờ ra hoặc bấm "Dùng thời gian hiện tại".`,
+      );
+      return;
+    }
+
+    setPreviewLoading(true);
     try {
-      const response = await api.post('/sessions/checkout', {
+      const response = await api.post('/sessions/checkout-preview', {
         session_id: session.session_id,
         check_out_time: datetimeLocalToIso(checkOutTime),
       });
+      setCheckoutPreview(response.data.data);
+      toast.success('Đã tính phí — xem lại và xác nhận thanh toán');
+    } catch (error: any) {
+      toast.error(error.response?.data?.message || 'Không tính được phí');
+    } finally {
+      setPreviewLoading(false);
+    }
+  };
+
+  const handleConfirmCheckout = async () => {
+    if (!checkoutPreview) return;
+    setSelectedSession(checkoutPreview);
+    setCheckoutLoading(true);
+    try {
+      const response = await api.post('/sessions/checkout', {
+        session_id: checkoutPreview.session_id,
+        check_out_time: new Date(checkoutPreview.check_out_time).toISOString(),
+      });
       setCheckoutDetail(response.data.data);
-      setConfirmedCheckOutTime(response.data.data?.check_out_time || checkOutTime);
+      setConfirmedCheckOutTime(response.data.data?.check_out_time || checkoutPreview.check_out_time);
       toast.success('Check-out thành công, đã xuất hóa đơn thanh toán');
       setSearchQuery('');
       setSearchResults({ reservations: [], activeSessions: [] });
       setCheckOutTimes({});
+      setCheckoutPreview(null);
     } catch (error: any) {
       toast.error(error.response?.data?.message || 'Check-out thất bại');
       setSelectedSession(null);
@@ -196,14 +257,27 @@ export default function StaffDashboard() {
     }
   };
 
+  const resetWorkspace = () => {
+    setSearchQuery('');
+    setSearchResults({ reservations: [], activeSessions: [] });
+    setCheckoutPreview(null);
+    setCheckInTimes({});
+    setCheckOutTimes({});
+  };
+
   const clearLogFilters = () => {
     setLogSearch('');
     setLogStatus('all');
+    setLogCustomerType('all');
     setLogPreset('today');
+    setLogPage(1);
   };
+
+  const logCounterSuffix = logPreset === 'today' ? ' trong hôm nay' : '';
 
   return (
     <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
+      <WalkInTicketModal ticket={walkInTicket} onClose={() => setWalkInTicket(null)} />
       
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
@@ -217,8 +291,7 @@ export default function StaffDashboard() {
         <div className="flex items-center gap-3">
           <button 
             onClick={() => {
-              setSearchQuery('');
-              setSearchResults({ reservations: [], activeSessions: [] });
+              resetWorkspace();
               if (activeTab === 'logs') fetchDailyLogs();
             }} 
             className="flex items-center gap-1.5 px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors text-sm"
@@ -256,18 +329,18 @@ export default function StaffDashboard() {
         {/* Left 2 columns - Actions & Search results */}
         <div className="lg:col-span-2 space-y-6">
           
-          {activeTab !== 'logs' && (
-            <div className="glass-morphism border border-slate-800 p-6 rounded-2xl">
-              <h2 className="text-lg font-bold mb-4 flex items-center gap-2">
+          {activeTab !== 'logs' && (activeTab === 'checkout' || checkInMode === 'reservation') && (
+            <div className="glass-morphism border border-slate-800 p-6 rounded-2xl space-y-4">
+              <h2 className="text-lg font-bold flex items-center gap-2">
                 <Search className="w-5 h-5 text-primary-500" />
-                Tìm kiếm thông tin xe
+                {activeTab === 'checkin' ? 'Tìm đặt chỗ (RES-...)' : 'Tìm vé ra bãi (TICKET-...)'}
               </h2>
               <form onSubmit={handleSearch} className="flex gap-3">
                 <input 
                   type="text"
                   placeholder={activeTab === 'checkin' 
                     ? "Nhập mã đặt chỗ (RES-...), biển số xe, hoặc ô đỗ..." 
-                    : "Nhập mã vé đỗ (TICKET-...), biển số xe, hoặc ô đỗ..."}
+                    : "Nhập mã vé (TICKET-...), biển số xe, hoặc ô đỗ..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
@@ -277,13 +350,37 @@ export default function StaffDashboard() {
                   disabled={loading}
                   className="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-xl font-bold flex items-center gap-1.5 transition-colors disabled:opacity-50 text-sm"
                 >
-                  {loading ? 'Đang tìm...' : 'Tìm kiếm'}
+                  {loading ? 'Đang tìm...' : 'Tìm vé'}
                 </button>
               </form>
+              <QrScannerPanel onScan={handleQrScan} />
             </div>
           )}
 
           {activeTab === 'checkin' && (
+            <div className="flex flex-wrap gap-2">
+              <button
+                type="button"
+                onClick={() => setCheckInMode('reservation')}
+                className={logChipClass(checkInMode === 'reservation')}
+              >
+                Đặt chỗ trước (RES)
+              </button>
+              <button
+                type="button"
+                onClick={() => setCheckInMode('walkin')}
+                className={logChipClass(checkInMode === 'walkin')}
+              >
+                Vào trực tiếp (walk-in)
+              </button>
+            </div>
+          )}
+
+          {activeTab === 'checkin' && checkInMode === 'walkin' && (
+            <WalkInCheckInForm onTicketCreated={(ticket) => setWalkInTicket(ticket)} />
+          )}
+
+          {activeTab === 'checkin' && checkInMode === 'reservation' && (
             <div className="space-y-4">
               <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Danh sách đặt chỗ chờ vào bãi</h3>
               {searchResults.reservations.length === 0 ? (
@@ -293,22 +390,25 @@ export default function StaffDashboard() {
                 </div>
               ) : (
                 searchResults.reservations.map((res) => (
-                  <div key={res.reservation_id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-                    <div>
-                      <div className="flex items-center gap-2.5 mb-2">
-                        <span className="bg-slate-800 text-xs px-2.5 py-1 rounded-full font-mono text-slate-300 font-semibold border border-slate-700">{res.reservation_code}</span>
-                        <span className="bg-yellow-500/10 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-yellow-500/20 uppercase">Chờ xe vào</span>
+                  <div key={res.reservation_id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all flex flex-col gap-5">
+                    <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2.5 mb-2">
+                          <span className="bg-slate-800 text-xs px-2.5 py-1 rounded-full font-mono text-slate-300 font-semibold border border-slate-700">{res.reservation_code}</span>
+                          <span className="bg-yellow-500/10 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-yellow-500/20 uppercase">Chờ xe vào</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm">
+                          <div><span className="text-slate-400">Khách hàng:</span> <strong className="text-slate-200">{res.customer_name}</strong></div>
+                          <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{res.customer_phone}</span></div>
+                          <div><span className="text-slate-400">Biển số:</span> <strong className="text-primary-400 font-mono">{res.license_plate}</strong></div>
+                          <div><span className="text-slate-400">Loại xe:</span> <span className="capitalize text-slate-300">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
+                          <div><span className="text-slate-400">Vị trí đỗ:</span> <strong className="text-emerald-400">{res.slot_code}</strong></div>
+                          <div><span className="text-slate-400">Giờ vào dự kiến:</span> <span className="text-slate-300">{formatDateTime24(res.reservation_time)}</span></div>
+                        </div>
                       </div>
-                      <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 mt-4 text-sm">
-                        <div><span className="text-slate-400">Khách hàng:</span> <strong className="text-slate-200">{res.customer_name}</strong></div>
-                        <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{res.customer_phone}</span></div>
-                        <div><span className="text-slate-400">Biển số:</span> <strong className="text-primary-400 font-mono">{res.license_plate}</strong></div>
-                        <div><span className="text-slate-400">Loại xe:</span> <span className="capitalize text-slate-300">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
-                        <div><span className="text-slate-400">Vị trí đỗ:</span> <strong className="text-emerald-400">{res.slot_code}</strong></div>
-                        <div><span className="text-slate-400">Giờ vào dự kiến:</span> <span className="text-slate-300">{formatDateTime24(res.reservation_time)}</span></div>
-                      </div>
-                      <div className="w-full md:w-72 space-y-2 mt-4 md:mt-0">
-                        <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500">
+
+                      <div className="w-full lg:w-72 flex-shrink-0 pt-5 lg:pt-1 lg:pl-6 lg:border-l border-slate-800">
+                        <label className="block text-xs uppercase tracking-wider font-bold text-primary-300 mb-3">
                           Giờ check-in
                         </label>
                         <DateTimeInput24
@@ -318,21 +418,24 @@ export default function StaffDashboard() {
                         <button
                           type="button"
                           onClick={() => useReservationTimeForCheckIn(res.reservation_id, res.reservation_time)}
-                          className="w-full text-xs font-semibold text-primary-300 hover:text-primary-200 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/15 rounded-lg py-2 transition-colors"
+                          className="w-full mt-3 text-xs font-semibold text-primary-300 hover:text-primary-200 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/15 rounded-lg py-2 transition-colors"
                         >
                           Dùng giờ vào dự kiến
                         </button>
-                        <p className="text-amber-400 text-xs leading-relaxed">
+                        <p className="text-amber-400 text-xs leading-relaxed mt-3">
                           Cho phép sớm/trễ tối đa 15 phút so với giờ vào dự kiến.
                         </p>
                       </div>
                     </div>
+
+                    <div className="flex justify-end pt-1 border-t border-slate-800/80">
                     <button 
                       onClick={() => handleCheckIn(res)}
-                      className="w-full md:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-colors text-sm self-end"
+                      className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-colors text-sm"
                     >
                       <LogIn className="w-4 h-4" /> Xác nhận xe vào
                     </button>
+                    </div>
                   </div>
                 ))
               )}
@@ -341,7 +444,67 @@ export default function StaffDashboard() {
 
           {activeTab === 'checkout' && (
             <div className="space-y-4">
-              <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Danh sách lượt đỗ xe hoạt động</h3>
+              {checkoutPreview ? (
+                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
+                  <div className="flex items-center justify-between gap-3">
+                    <h3 className="font-bold text-slate-200">Bước 2 — Xác nhận thanh toán</h3>
+                    <button
+                      type="button"
+                      onClick={() => setCheckoutPreview(null)}
+                      className="text-xs text-slate-400 hover:text-slate-200"
+                    >
+                      ← Quay lại tìm vé
+                    </button>
+                  </div>
+
+                  {assetUrl(checkoutPreview.vehicle_photo_url) && (
+                    <div>
+                      <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Ảnh xe</p>
+                      <img
+                        src={assetUrl(checkoutPreview.vehicle_photo_url)!}
+                        alt="Xe"
+                        className="w-full max-h-48 object-cover rounded-xl border border-slate-800"
+                      />
+                    </div>
+                  )}
+
+                  <div className="grid grid-cols-2 gap-3 text-sm">
+                    <div><span className="text-slate-500">Mã vé:</span> <strong className="font-mono">{checkoutPreview.ticket_code}</strong></div>
+                    <div><span className="text-slate-500">Biển số:</span> <strong className="font-mono text-primary-400">{checkoutPreview.license_plate}</strong></div>
+                    <div><span className="text-slate-500">Loại xe:</span> <span>{checkoutPreview.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
+                    <div><span className="text-slate-500">Vị trí:</span> <strong className="text-yellow-400">{checkoutPreview.slot_code}</strong></div>
+                    <div className="col-span-2"><span className="text-slate-500">Giờ vào:</span> {formatDateTime24(checkoutPreview.check_in_time)}</div>
+                    <div className="col-span-2"><span className="text-slate-500">Giờ ra:</span> {formatDateTime24(checkoutPreview.check_out_time)}</div>
+                  </div>
+
+                  <div className="border-t border-slate-800 pt-4 space-y-2">
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Tổng thời gian</span>
+                      <strong>{checkoutPreview.total_hours} giờ</strong>
+                    </div>
+                    <div className="flex justify-between text-sm">
+                      <span className="text-slate-400">Đơn giá</span>
+                      <span>{parseInt(checkoutPreview.hourly_rate).toLocaleString('vi-VN')}đ / giờ</span>
+                    </div>
+                    <div className="flex justify-between text-lg font-black text-rose-400">
+                      <span>Phí gửi xe</span>
+                      <span>{parseInt(checkoutPreview.total_amount).toLocaleString('vi-VN')} VNĐ</span>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleConfirmCheckout}
+                    disabled={checkoutLoading}
+                    className="w-full bg-rose-600 hover:bg-rose-700 disabled:opacity-50 text-white font-bold py-3 rounded-xl flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle className="w-5 h-5" />
+                    {checkoutLoading ? 'Đang xử lý...' : 'Xác nhận thanh toán'}
+                  </button>
+                </div>
+              ) : (
+                <>
+              <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Bước 1 — Tìm vé đang đỗ</h3>
               {searchResults.activeSessions.length === 0 ? (
                 <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-500">
                   <Car className="w-12 h-12 mx-auto mb-3 text-slate-700" />
@@ -357,46 +520,63 @@ export default function StaffDashboard() {
                           <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/20 uppercase">Đang đỗ xe</span>
                         </div>
                         <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 mt-4 text-sm">
-                          <div><span className="text-slate-400">Chủ xe:</span> <strong className="text-slate-200">{session.customer_name || 'Khách vãng lai'}</strong></div>
-                          <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{session.customer_phone || 'N/A'}</span></div>
+                          <div><span className="text-slate-400">Chủ xe:</span> <strong className="text-slate-200">{formatCustomerName(session)}</strong></div>
+                          <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{formatCustomerPhone(session)}</span></div>
                           <div><span className="text-slate-400">Biển số:</span> <strong className="text-primary-400 font-mono">{session.license_plate}</strong></div>
                           <div><span className="text-slate-400">Loại xe:</span> <span className="capitalize text-slate-300">{session.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
                           <div><span className="text-slate-400">Vị trí đỗ:</span> <strong className="text-yellow-400">{session.slot_code}</strong></div>
                           <div><span className="text-slate-400">Giờ vào bãi:</span> <span className="text-slate-300">{formatDateTime24(session.check_in_time)}</span></div>
                         </div>
+                        {assetUrl(session.vehicle_photo_url) && (
+                          <img
+                            src={assetUrl(session.vehicle_photo_url)!}
+                            alt="Xe"
+                            className="mt-3 w-full max-h-32 object-cover rounded-lg border border-slate-800"
+                          />
+                        )}
                       </div>
                       <div className="w-full md:w-72 space-y-2">
                         <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500">
                           Giờ check-out
                         </label>
                         <DateTimeInput24
-                          value={checkOutTimes[session.session_id] ?? getNowDatetimeLocal()}
+                          value={
+                            checkOutTimes[session.session_id] ??
+                            getDefaultCheckoutDatetimeLocal(session.check_in_time)
+                          }
                           min={toDatetimeLocalValue(session.check_in_time)}
                           onChange={(v) => setCheckOutTimeFor(session.session_id, v)}
                         />
                         <button
                           type="button"
-                          onClick={() => useNowForCheckOut(session.session_id)}
+                          onClick={() => useNowForCheckOut(session.session_id, session.check_in_time)}
                           className="w-full text-xs font-semibold text-primary-300 hover:text-primary-200 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/15 rounded-lg py-2 transition-colors"
                         >
-                          Dùng thời gian hiện tại
+                          Dùng giờ ra hợp lệ
                         </button>
+                        {new Date(session.check_in_time) > new Date() && (
+                          <p className="text-amber-400 text-xs leading-relaxed">
+                            Giờ vào bãi đang ở tương lai — hãy chỉnh giờ ra sau giờ vào trước khi tính phí.
+                          </p>
+                        )}
                         <p className="text-amber-400 text-xs leading-relaxed">
-                          Giờ ra phải sau giờ vào bãi. Chỉnh giờ ra nếu cần demo tính phí.
+                          Giờ ra phải sau giờ vào bãi ({formatDateTime24(session.check_in_time)}).
                         </p>
                       </div>
                     </div>
                     <div className="flex justify-end">
                       <button 
-                        onClick={() => requestCheckoutInvoice(session)}
-                        disabled={checkoutLoading}
-                        className="w-full md:w-auto bg-rose-600 hover:bg-rose-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-rose-600/20 transition-colors text-sm"
+                        onClick={() => handlePreviewCheckout(session)}
+                        disabled={previewLoading}
+                        className="w-full md:w-auto bg-amber-600 hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-amber-600/20 transition-colors text-sm"
                       >
-                        <LogOut className="w-4 h-4" /> Tính tiền & Cho ra
+                        <LogOut className="w-4 h-4" /> {previewLoading ? 'Đang tính...' : 'Tính phí'}
                       </button>
                     </div>
                   </div>
                 ))
+              )}
+                </>
               )}
             </div>
           )}
@@ -406,7 +586,15 @@ export default function StaffDashboard() {
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
                 <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Nhật ký ra vào</h3>
                 <p className="text-xs text-slate-500">
-                  Hiển thị {logsMeta.filteredCount} / {logsMeta.totalInPreset} lượt
+                  <span className="text-slate-400">Trang {logPagination.page}</span>
+                  {' · '}
+                  <span className="text-primary-300/90 font-medium">
+                    {logPagination.rangeStart}–{logPagination.rangeEnd}
+                  </span>
+                  {' / '}
+                  <span className="text-primary-300/90 font-medium">{logPagination.total}</span>
+                  {' lượt ra vào'}
+                  {logCounterSuffix}
                 </p>
               </div>
 
@@ -442,6 +630,20 @@ export default function StaffDashboard() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
+                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Loại khách</span>
+                  {([
+                    ['all', 'Tất cả'],
+                    ['walkin', 'Khách vãng lai'],
+                    ['unregistered', 'Khách chưa đăng ký'],
+                    ['account', 'Khách có tài khoản'],
+                  ] as const).map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setLogCustomerType(value)} className={logChipClass(logCustomerType === value)}>
+                      {label}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-wrap gap-2">
                   <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Trạng thái</span>
                   {([
                     ['all', 'Tất cả'],
@@ -452,7 +654,7 @@ export default function StaffDashboard() {
                       {label}
                     </button>
                   ))}
-                  {(logSearch || logStatus !== 'all' || logPreset !== 'today') && (
+                  {(logSearch || logStatus !== 'all' || logCustomerType !== 'all' || logPreset !== 'today') && (
                     <button type="button" onClick={clearLogFilters} className="text-xs text-slate-400 hover:text-primary-300 ml-1">
                       Xóa bộ lọc
                     </button>
@@ -475,6 +677,7 @@ export default function StaffDashboard() {
                         <tr>
                           <th className="p-4">Mã Vé</th>
                           <th className="p-4">Biển Số / Loại</th>
+                          <th className="p-4">Loại Khách</th>
                           <th className="p-4">Vị Trí</th>
                           <th className="p-4">Giờ Vào</th>
                           <th className="p-4">Giờ Ra</th>
@@ -483,17 +686,20 @@ export default function StaffDashboard() {
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-slate-800">
-                        {dailyLogs.map((log) => (
+                        {logPagination.items.map((log) => (
                           <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
                             <td className="p-4 font-mono text-xs">{log.ticket_code}</td>
                             <td className="p-4">
                               <span className="font-semibold text-slate-100 block font-mono">{log.license_plate}</span>
                               <span className="text-xs text-slate-400 capitalize">{log.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
                             </td>
+                            <td className="p-4 text-xs text-slate-400">
+                              {getCustomerTypeLabel(log.customer_type ?? resolveCustomerType(log))}
+                            </td>
                             <td className="p-4 font-bold text-slate-200">{log.slot_code}</td>
-                            <td className="p-4 text-xs text-slate-400">{formatLogDateTime(log.check_in_time)}</td>
-                            <td className="p-4 text-xs text-slate-400">{formatLogDateTime(log.check_out_time)}</td>
-                            <td className={`p-4 font-bold ${log.total_amount && Number(log.total_amount) > 0 ? 'text-emerald-400' : 'text-slate-500'}`}>
+                            <td className="p-4 text-xs text-blue-400">{formatLogDateTime(log.check_in_time)}</td>
+                            <td className="p-4 text-xs text-emerald-400">{formatLogDateTime(log.check_out_time)}</td>
+                            <td className={`p-4 font-bold ${log.total_amount && Number(log.total_amount) > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
                               {log.total_amount && Number(log.total_amount) > 0
                                 ? `${parseInt(log.total_amount).toLocaleString('vi-VN')}đ`
                                 : '—'}
@@ -502,7 +708,7 @@ export default function StaffDashboard() {
                               {log.status === 'active' ? (
                                 <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-500/20 uppercase">Trong bãi</span>
                               ) : (
-                                <span className="bg-slate-800 text-slate-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-slate-700 uppercase">Hoàn thành</span>
+                                <span className="bg-indigo-500/10 text-indigo-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-indigo-500/25 uppercase">Hoàn thành</span>
                               )}
                             </td>
                           </tr>
@@ -510,6 +716,12 @@ export default function StaffDashboard() {
                       </tbody>
                     </table>
                   </div>
+                  <ListPagination
+                    page={logPagination.page}
+                    totalPages={logPagination.totalPages}
+                    onPageChange={setLogPage}
+                    className="pb-4"
+                  />
                 </div>
               )}
             </div>
@@ -529,15 +741,15 @@ export default function StaffDashboard() {
             <ul className="space-y-3.5 text-sm text-slate-300">
               <li className="flex gap-2">
                 <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">1</span>
-                <span>Tìm mã đặt chỗ hoặc biển số xe khi xe tới cổng.</span>
+                <span><strong>Đặt chỗ:</strong> quét QR RES hoặc tìm mã → check-in. <strong>Walk-in:</strong> nhập biển số, chọn slot, tạo vé TICKET.</span>
               </li>
               <li className="flex gap-2">
                 <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">2</span>
-                <span>Bấm <strong>Check-in</strong> để cập nhật vị trí sang trạng thái <strong>Đang đỗ xe</strong>.</span>
+                <span>Quét QR trên điện thoại khách bằng camera laptop (bật quyền camera trình duyệt).</span>
               </li>
               <li className="flex gap-2">
                 <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">3</span>
-                <span>Khi xe ra, tìm xe đỗ, bấm <strong>Check-out</strong>, hệ thống tự động tính tiền, thu tiền mặt ngoại tuyến và hoàn tất lượt đỗ.</span>
+                <span>Check-out: tìm/quét TICKET → <strong>Tính phí</strong> → <strong>Xác nhận thanh toán</strong> (tiền mặt).</span>
               </li>
             </ul>
           </div>
@@ -570,7 +782,6 @@ export default function StaffDashboard() {
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
           <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative text-white">
             
-            {/* Header */}
             <div className="bg-slate-950 p-6 border-b border-slate-850 flex justify-between items-center">
               <h3 className="text-lg font-bold flex items-center gap-2 text-rose-500">
                 <LogOut className="w-5 h-5" />
@@ -588,7 +799,6 @@ export default function StaffDashboard() {
               </button>
             </div>
 
-            {/* Content */}
             <div className="p-6 space-y-6">
               <div className="text-center">
                 <div className="bg-rose-500/10 text-rose-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
@@ -601,6 +811,10 @@ export default function StaffDashboard() {
               </div>
 
               <div className="border-t border-b border-slate-800 py-4 space-y-2.5 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-slate-400">Mã vé:</span>
+                  <strong className="font-mono text-slate-100">{selectedSession.ticket_code}</strong>
+                </div>
                 <div className="flex justify-between">
                   <span className="text-slate-400">Biển số xe:</span>
                   <strong className="font-mono text-slate-100">{selectedSession.license_plate}</strong>

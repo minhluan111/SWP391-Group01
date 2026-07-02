@@ -33,29 +33,25 @@ const { verifyToken, requireRole } = require('../middlewares/authMiddleware');
  */
 router.post('/checkin', verifyToken, requireRole(['Staff', 'Admin']), sessionController.checkIn);
 
-/**
- * @swagger
- * /api/sessions/checkout:
- *   post:
- *     summary: Check vehicle out, calculate fee and confirm payment (Staff only)
- *     tags: [Sessions]
- *     security:
- *       - bearerAuth: []
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - session_id
- *             properties:
- *               session_id:
- *                 type: integer
- *     responses:
- *       200:
- *         description: Check-out and fee calculation successful
- */
+const { uploadVehiclePhoto } = require('../middlewares/upload');
+
+router.post(
+    '/walk-in-checkin',
+    verifyToken,
+    requireRole(['Staff', 'Admin']),
+    (req, res, next) => {
+        uploadVehiclePhoto(req, res, (err) => {
+            if (err) {
+                return res.status(400).json({ message: err.message || 'Lỗi upload ảnh xe' });
+            }
+            next();
+        });
+    },
+    sessionController.walkInCheckIn,
+);
+
+router.post('/checkout-preview', verifyToken, requireRole(['Staff', 'Admin']), sessionController.previewCheckOut);
+
 router.post('/checkout', verifyToken, requireRole(['Staff', 'Admin']), sessionController.checkOut);
 
 /**
