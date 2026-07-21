@@ -91,7 +91,7 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
         >
           <button
             type="button"
-            className="absolute inset-0 bg-slate-950/70 backdrop-blur-xl"
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={onClose}
             aria-label="Đóng"
           />
@@ -100,7 +100,7 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
             role="dialog"
             aria-modal="true"
             aria-labelledby="ticket-modal-title"
-            className="relative w-full max-w-2xl glass-morphism border border-white/10 rounded-3xl overflow-hidden shadow-2xl bg-gradient-to-br from-slate-900/90 to-indigo-950/80"
+            className="relative w-full max-w-2xl border border-slate-200 rounded-3xl overflow-hidden shadow-2xl bg-white"
             initial={{ opacity: 0, scale: 0.95, y: 16 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 16 }}
@@ -110,37 +110,37 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
             <button
               type="button"
               onClick={onClose}
-              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-slate-950/60 border border-slate-700 text-slate-400 hover:text-white transition-colors"
+              className="absolute top-4 right-4 z-10 p-2 rounded-full bg-slate-100 border border-slate-200 text-ink-muted hover:text-ink transition-colors"
               aria-label="Đóng vé"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-primary-500/20 rounded-full blur-3xl pointer-events-none" />
+            <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-primary-500/10 rounded-full blur-3xl pointer-events-none" />
 
             <div
               className={`p-6 md:p-8 flex flex-col ${showQr && qrValue ? 'md:flex-row items-center justify-between' : ''} gap-8`}
             >
               <div className="space-y-4 flex-1 w-full">
-                <div className="flex items-center gap-2 text-primary-400 font-bold text-xs uppercase tracking-wider">
+                <div className="flex items-center gap-2 text-primary-500 font-bold text-xs uppercase tracking-wider">
                   {showQr ? <QrCode className="w-4 h-4" /> : <Ticket className="w-4 h-4" />}
                   <span>{showQr ? 'Vé đỗ xe của bạn' : 'Chi tiết vé đỗ xe'}</span>
                 </div>
 
                 <div className="space-y-3">
                   {isWalkInHistory ? (
-                    <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/5 px-4 py-3">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-400/80 block mb-1">
+                    <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-emerald-700 block mb-1">
                         Loại vé
                       </span>
                       <h3
                         id="ticket-modal-title"
-                        className="text-lg md:text-xl font-bold text-emerald-100"
+                        className="text-lg md:text-xl font-bold text-emerald-800"
                       >
                         Vé check-in trực tiếp
                       </h3>
                       {reservation.check_in_time && (
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-ink-muted mt-1">
                           Giờ vào bãi: {formatDateTime(reservation.check_in_time)}
                         </p>
                       )}
@@ -149,35 +149,35 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                     <div
                       className={`rounded-xl border px-4 py-3 ${
                         sessionTicket
-                          ? 'border-slate-700/80 bg-slate-900/40'
-                          : 'border-amber-500/25 bg-amber-500/5'
+                          ? 'border-slate-200 bg-surface'
+                          : 'border-amber-200 bg-amber-50'
                       }`}
                     >
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-slate-500 block mb-1">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-ink-muted block mb-1">
                         Mã đặt chỗ
                       </span>
                       <h3
                         id="ticket-modal-title"
-                        className="text-xl md:text-2xl font-black text-slate-100 tracking-tight font-mono break-all"
+                        className="text-xl md:text-2xl font-black text-ink tracking-tight font-mono break-all"
                       >
                         {reservation.reservation_code}
                       </h3>
-                      <p className="text-xs text-slate-400 mt-1">
+                      <p className="text-xs text-ink-muted mt-1">
                         Giờ vào dự kiến: {formatDateTime(reservation.reservation_time)}
                       </p>
                     </div>
                   )}
 
                   {sessionTicket && (
-                    <div className="rounded-xl border border-blue-500/25 bg-blue-500/5 px-4 py-3">
-                      <span className="text-[10px] uppercase tracking-wider font-bold text-blue-400/80 block mb-1">
+                    <div className="rounded-xl border border-blue-200 bg-blue-50 px-4 py-3">
+                      <span className="text-[10px] uppercase tracking-wider font-bold text-blue-700 block mb-1">
                         Mã vé vào bãi
                       </span>
-                      <p className="text-xl md:text-2xl font-black text-blue-100 tracking-tight font-mono break-all">
+                      <p className="text-xl md:text-2xl font-black text-blue-800 tracking-tight font-mono break-all">
                         {reservation.ticket_code}
                       </p>
                       {reservation.check_in_time && (
-                        <p className="text-xs text-slate-400 mt-1">
+                        <p className="text-xs text-ink-muted mt-1">
                           Check-in lúc: {formatDateTime(reservation.check_in_time)}
                         </p>
                       )}
@@ -187,67 +187,67 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
 
                 <div className="grid grid-cols-2 gap-4 pt-2 text-sm">
                   <div>
-                    <span className="text-slate-500 block text-xs uppercase font-semibold">Vị trí đỗ</span>
-                    <strong className="text-emerald-400 text-lg font-bold">{reservation.slot_code}</strong>
+                    <span className="text-ink-muted block text-xs uppercase font-semibold">Vị trí đỗ</span>
+                    <strong className="text-emerald-600 text-lg font-bold">{reservation.slot_code}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-xs uppercase font-semibold">Tầng đỗ</span>
-                    <strong className="text-slate-200 text-lg font-bold">
+                    <span className="text-ink-muted block text-xs uppercase font-semibold">Tầng đỗ</span>
+                    <strong className="text-ink text-lg font-bold">
                       {getFloorLabel(reservation.slot_code)}
                     </strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-xs uppercase font-semibold">Biển số xe</span>
-                    <strong className="font-mono text-slate-200 text-lg font-bold">{reservation.license_plate}</strong>
+                    <span className="text-ink-muted block text-xs uppercase font-semibold">Biển số xe</span>
+                    <strong className="font-mono text-ink text-lg font-bold">{reservation.license_plate}</strong>
                   </div>
                   <div>
-                    <span className="text-slate-500 block text-xs uppercase font-semibold">Loại xe</span>
-                    <span className="text-slate-300 font-bold">
+                    <span className="text-ink-muted block text-xs uppercase font-semibold">Loại xe</span>
+                    <span className="text-ink font-bold">
                       {reservation.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}
                     </span>
                   </div>
                 </div>
 
                 {completed && (
-                  <div className="grid grid-cols-2 gap-4 pt-1 text-sm border-t border-slate-800/80">
+                  <div className="grid grid-cols-2 gap-4 pt-1 text-sm border-t border-slate-200">
                     {reservation.check_in_time && (
                       <div>
-                        <span className="text-slate-500 block text-xs uppercase font-semibold">Giờ vào bãi</span>
-                        <strong className="text-blue-300 font-bold">
+                        <span className="text-ink-muted block text-xs uppercase font-semibold">Giờ vào bãi</span>
+                        <strong className="text-blue-600 font-bold">
                           {formatDateTime(reservation.check_in_time)}
                         </strong>
                       </div>
                     )}
                     {reservation.check_out_time && (
                       <div>
-                        <span className="text-slate-500 block text-xs uppercase font-semibold">Giờ ra bãi</span>
-                        <strong className="text-emerald-300 font-bold">
+                        <span className="text-ink-muted block text-xs uppercase font-semibold">Giờ ra bãi</span>
+                        <strong className="text-emerald-600 font-bold">
                           {formatDateTime(reservation.check_out_time)}
                         </strong>
                       </div>
                     )}
                     {reservation.total_amount !== undefined && reservation.total_amount !== null && (
                       <div>
-                        <span className="text-slate-500 block text-xs uppercase font-semibold">Tổng tiền</span>
-                        <strong className="text-slate-100 text-lg font-bold">
+                        <span className="text-ink-muted block text-xs uppercase font-semibold">Tổng tiền</span>
+                        <strong className="text-ink text-lg font-bold">
                           {Number(reservation.total_amount).toLocaleString('vi-VN')}đ
                         </strong>
                       </div>
                     )}
                     {reservation.payment_method && (
                       <div>
-                        <span className="text-slate-500 block text-xs uppercase font-semibold">
+                        <span className="text-ink-muted block text-xs uppercase font-semibold">
                           Phương thức thanh toán
                         </span>
-                        <strong className="text-slate-200 font-bold">
+                        <strong className="text-ink font-bold">
                           {reservation.payment_method === 'cash' ? 'Tiền mặt' : 'Online'}
                         </strong>
                         {reservation.payment_status && (
                           <span
                             className={`ml-2 text-[10px] px-1.5 py-0.5 rounded font-semibold uppercase ${
                               reservation.payment_status === 'paid'
-                                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20'
-                                : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'
+                                ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                                : 'bg-yellow-50 text-yellow-700 border border-yellow-200'
                             }`}
                           >
                             {reservation.payment_status === 'paid' ? 'Đã trả' : 'Chưa trả'}
@@ -259,7 +259,7 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                 )}
 
                 {inLot && (
-                  <p className="text-xs text-blue-400 bg-blue-500/10 border border-blue-500/20 rounded-lg px-3 py-2">
+                  <p className="text-xs text-blue-600 bg-blue-50 border border-blue-200 rounded-lg px-3 py-2">
                     Xe đã vào bãi — dùng mã QR bên cạnh (mã vé vào bãi) khi ra bãi.
                   </p>
                 )}
@@ -268,8 +268,8 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                   <div
                     className={`text-xs rounded-lg px-3 py-2 border ${
                       cancelInfo.canCancel
-                        ? 'text-amber-400 bg-amber-500/10 border-amber-500/20'
-                        : 'text-orange-300 bg-orange-500/10 border-orange-500/25'
+                        ? 'text-amber-700 bg-amber-50 border-amber-200'
+                        : 'text-orange-700 bg-orange-50 border-orange-200'
                     }`}
                   >
                     {cancelInfo.message}
@@ -277,19 +277,19 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                 )}
 
                 {reservation.status === 'cancelled' && (
-                  <p className="text-xs text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2">
+                  <p className="text-xs text-ink-muted bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                     Đặt chỗ đã hủy — chỉ xem lại thông tin vé.
                   </p>
                 )}
 
                 {completed && (
-                  <p className="text-xs text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 rounded-lg px-3 py-2">
+                  <p className="text-xs text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-lg px-3 py-2">
                     Vé đã hoàn tất — chỉ xem lại thông tin, không còn mã QR.
                   </p>
                 )}
 
                 {!showQr && !completed && reservation.status !== 'cancelled' && (
-                  <p className="text-xs text-slate-400 bg-slate-800/50 border border-slate-700 rounded-lg px-3 py-2">
+                  <p className="text-xs text-ink-muted bg-slate-50 border border-slate-200 rounded-lg px-3 py-2">
                     Trạng thái: {getStatusText(reservation.status, reservation)} — chỉ xem lại thông tin vé.
                   </p>
                 )}
@@ -299,7 +299,7 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                     type="button"
                     onClick={() => setShowCancelConfirm(true)}
                     disabled={cancelling}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-500/30 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20 font-semibold text-sm transition-colors disabled:opacity-50"
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-xl border border-rose-300 bg-rose-50 text-rose-600 hover:bg-rose-100 font-semibold text-sm transition-colors disabled:opacity-50"
                   >
                     <Ban className="w-4 h-4" />
                     Hủy đặt chỗ
@@ -314,18 +314,18 @@ export default function ReservationTicketModal({ reservation, onClose, onCancell
                     alt="Mã QR vé đỗ xe"
                     className="w-36 h-36"
                   />
-                  <span className="text-[10px] text-slate-500 mt-2 font-bold uppercase tracking-wider text-center max-w-[9rem]">
+                  <span className="text-[10px] text-ink-muted mt-2 font-bold uppercase tracking-wider text-center max-w-[9rem]">
                     {getQrCodeCaption(reservation)}
                   </span>
-                  <span className="text-[9px] text-slate-400 mt-1 font-mono text-center break-all max-w-[9rem]">
+                  <span className="text-[9px] text-ink-muted mt-1 font-mono text-center break-all max-w-[9rem]">
                     {qrValue}
                   </span>
                 </div>
               )}
             </div>
 
-            <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-r border-slate-700" />
-            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-slate-950 rounded-full border-l border-slate-700" />
+            <div className="hidden md:block absolute left-0 top-1/2 -translate-y-1/2 -translate-x-1/2 w-6 h-6 bg-surface rounded-full border-r border-slate-200" />
+            <div className="hidden md:block absolute right-0 top-1/2 -translate-y-1/2 translate-x-1/2 w-6 h-6 bg-surface rounded-full border-l border-slate-200" />
 
             <CancelReservationConfirmDialog
               open={showCancelConfirm}

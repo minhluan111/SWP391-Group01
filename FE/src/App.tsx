@@ -26,7 +26,7 @@ function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) {
 
   if (isLoading) {
     return (
-      <div className="min-h-[50vh] flex items-center justify-center text-slate-400">
+      <div className="min-h-[50vh] flex items-center justify-center text-ink-muted">
         Đang tải...
       </div>
     );

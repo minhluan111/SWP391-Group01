@@ -136,21 +136,21 @@ export function getDisplayStatus(res: ReservationLike): StatusFilter | 'expired'
 
 export function getStatusColor(status: string, res?: ReservationLike) {
   if (res && isReservationCompleted(res)) {
-    return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/25';
+    return 'bg-primary-500/10 text-primary-700 border-primary-500/25';
   }
   switch (status) {
     case 'pending':
-      return 'bg-yellow-500/10 text-yellow-500 border-yellow-500/20';
+      return 'bg-yellow-50 text-yellow-700 border-yellow-200';
     case 'checked_in':
-      return 'bg-blue-500/10 text-blue-400 border-blue-500/20';
+      return 'bg-blue-50 text-blue-700 border-blue-200';
     case 'expired':
-      return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
+      return 'bg-rose-50 text-rose-700 border-rose-200';
     case 'cancelled':
-      return 'bg-violet-500/10 text-violet-400 border-violet-500/20';
+      return 'bg-violet-50 text-violet-700 border-violet-200';
     case 'completed':
-      return 'bg-indigo-500/10 text-indigo-400 border-indigo-500/25';
+      return 'bg-primary-500/10 text-primary-700 border-primary-500/25';
     default:
-      return 'bg-slate-800 text-slate-400 border-slate-700';
+      return 'bg-slate-100 text-slate-600 border-slate-200';
   }
 }
 

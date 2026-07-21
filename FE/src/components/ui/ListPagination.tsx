@@ -21,18 +21,18 @@ export default function ListPagination({
         type="button"
         onClick={() => onPageChange(page - 1)}
         disabled={page <= 1}
-        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 text-ink-muted hover:border-slate-300 hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed"
       >
         ‹ Trước
       </button>
-      <span className="text-xs text-slate-500 font-medium min-w-[4.5rem] text-center">
+      <span className="text-xs text-ink-muted font-medium min-w-[4.5rem] text-center">
         {page} / {totalPages}
       </span>
       <button
         type="button"
         onClick={() => onPageChange(page + 1)}
         disabled={page >= totalPages}
-        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-700 text-slate-300 hover:border-slate-600 disabled:opacity-40 disabled:cursor-not-allowed"
+        className="px-3 py-1.5 rounded-lg text-xs font-semibold border border-slate-200 text-ink-muted hover:border-slate-300 hover:text-ink disabled:opacity-40 disabled:cursor-not-allowed"
       >
         Sau ›
       </button>

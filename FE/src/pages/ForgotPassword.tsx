@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, ArrowLeft, ShieldAlert } from 'lucide-react';
+import { ArrowLeft, ShieldAlert } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import api from '../services/api';
@@ -15,6 +15,7 @@ import FormFieldError from '../components/ui/FormFieldError';
 import PasswordInput from '../components/ui/PasswordInput';
 import PasswordStrengthBar from '../components/ui/PasswordStrengthBar';
 import PasswordMatchIndicator from '../components/ui/PasswordMatchIndicator';
+import BrandLogo from '../components/layout/BrandLogo';
 
 export default function ForgotPassword() {
   const [step, setStep] = useState(1);
@@ -73,27 +74,24 @@ export default function ForgotPassword() {
     setReceivedOtp('');
   };
 
-  const darkInputClass = (hasError: boolean) =>
-    `w-full px-4 py-2.5 rounded-xl bg-slate-800/80 border text-white placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${
-      hasError ? 'border-red-400' : 'border-slate-700'
+  const lightInputClass = (hasError: boolean) =>
+    `w-full px-4 py-2.5 rounded-xl bg-white border text-ink placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all ${
+      hasError ? 'border-red-400' : 'border-slate-200'
     }`;
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-6 bg-gradient-to-br from-slate-900 via-slate-800 to-indigo-950">
-      <div className="max-w-md w-full glass-morphism border border-slate-700/50 p-8 rounded-2xl shadow-2xl relative overflow-hidden text-white">
+    <div className="min-h-screen flex items-center justify-center p-6 bg-surface">
+      <div className="max-w-md w-full bg-white border border-slate-200 p-8 rounded-2xl shadow-xl relative overflow-hidden text-ink">
         
-        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-primary-500/20 rounded-full blur-2xl pointer-events-none"></div>
-        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-indigo-500/20 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute top-0 right-0 -mr-16 -mt-16 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-16 -mb-16 w-32 h-32 bg-primary-500/10 rounded-full blur-2xl pointer-events-none"></div>
 
         <div className="flex flex-col items-center mb-8">
-          <Link to="/" className="flex items-center gap-2 mb-6 text-white">
-            <div className="bg-primary-600 p-2.5 rounded-xl shadow-lg shadow-primary-500/30">
-              <Car className="w-6 h-6" />
-            </div>
-            <span className="text-xl font-bold tracking-wider">Smart Parking</span>
-          </Link>
-          <h2 className="text-2xl font-extrabold mb-2 text-center text-slate-100">Quên mật khẩu?</h2>
-          <p className="text-sm text-slate-400 text-center">
+          <div className="mb-6">
+            <BrandLogo title="Smart Parking System" size="md" textClassName="text-brand-navy" />
+          </div>
+          <h2 className="text-2xl font-extrabold mb-2 text-center text-ink">Quên mật khẩu?</h2>
+          <p className="text-sm text-ink-muted text-center">
             {step === 1 
               ? 'Nhập email của bạn để nhận mã khôi phục mật khẩu.' 
               : 'Nhập mã OTP đã nhận và thiết lập mật khẩu mới.'}
@@ -103,11 +101,11 @@ export default function ForgotPassword() {
         {step === 1 ? (
           <form className="space-y-6" onSubmit={requestForm.handleSubmit(onRequestCode)} noValidate>
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Địa chỉ Email</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Địa chỉ Email</label>
               <input
                 type="email"
                 placeholder="email@gmail.com"
-                className={darkInputClass(!!requestForm.formState.errors.email)}
+                className={lightInputClass(!!requestForm.formState.errors.email)}
                 {...requestForm.register('email')}
               />
               <FormFieldError message={requestForm.formState.errors.email?.message} />
@@ -116,7 +114,7 @@ export default function ForgotPassword() {
             <button 
               disabled={requestForm.formState.isSubmitting} 
               type="submit" 
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary-500/25 active:scale-95 disabled:opacity-50"
+              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3.5 rounded-xl transition-all shadow-lg shadow-primary-500/20 active:scale-95 disabled:opacity-50"
             >
               {requestForm.formState.isSubmitting ? 'Đang xử lý...' : 'Gửi mã xác nhận'}
             </button>
@@ -124,30 +122,30 @@ export default function ForgotPassword() {
         ) : (
           <form className="space-y-5" onSubmit={resetForm.handleSubmit(onResetPassword)} noValidate>
             {receivedOtp && (
-              <div className="bg-primary-950/40 border border-primary-800/60 p-4 rounded-xl flex gap-3 text-sm text-primary-300 mb-2">
+              <div className="bg-primary-50 border border-primary-200 p-4 rounded-xl flex gap-3 text-sm text-primary-500 mb-2">
                 <ShieldAlert className="w-5 h-5 flex-shrink-0" />
                 <div>
                   <p className="font-semibold">Mã OTP thử nghiệm:</p>
-                  <p className="text-lg font-mono tracking-widest text-primary-200 mt-1 select-all">{receivedOtp}</p>
-                  <p className="text-xs text-slate-400 mt-1">(Chúng tôi tự động hiển thị mã OTP tại đây để bạn tiện kiểm thử)</p>
+                  <p className="text-lg font-mono tracking-widest text-primary-600 mt-1 select-all">{receivedOtp}</p>
+                  <p className="text-xs text-ink-muted mt-1">(Chúng tôi tự động hiển thị mã OTP tại đây để bạn tiện kiểm thử)</p>
                 </div>
               </div>
             )}
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Mã số OTP</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Mã số OTP</label>
               <input
                 type="text"
                 placeholder="Nhập 6 số OTP"
                 maxLength={6}
-                className={`${darkInputClass(!!resetForm.formState.errors.code)} font-mono text-center text-lg tracking-widest`}
+                className={`${lightInputClass(!!resetForm.formState.errors.code)} font-mono text-center text-lg tracking-widest`}
                 {...resetForm.register('code')}
               />
               <FormFieldError message={resetForm.formState.errors.code?.message} />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Mật khẩu mới</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Mật khẩu mới</label>
               <PasswordInput
                 variant="forgot"
                 placeholder="Nhập mật khẩu mới..."
@@ -159,7 +157,7 @@ export default function ForgotPassword() {
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1.5">Nhập lại mật khẩu</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-1.5">Nhập lại mật khẩu</label>
               <PasswordInput
                 variant="forgot"
                 placeholder="Nhập lại mật khẩu..."
@@ -173,7 +171,7 @@ export default function ForgotPassword() {
             <button 
               disabled={resetForm.formState.isSubmitting} 
               type="submit" 
-              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary-500/25 active:scale-95 disabled:opacity-50"
+              className="w-full bg-primary-600 hover:bg-primary-700 text-white font-bold py-3 rounded-xl transition-all shadow-lg shadow-primary-500/20 active:scale-95 disabled:opacity-50"
             >
               {resetForm.formState.isSubmitting ? 'Đang cập nhật...' : 'Xác nhận đặt lại mật khẩu'}
             </button>
@@ -181,15 +179,15 @@ export default function ForgotPassword() {
             <button 
               type="button" 
               onClick={handleBackToStep1} 
-              className="w-full text-center text-sm text-slate-400 hover:text-slate-200 mt-2 block"
+              className="w-full text-center text-sm text-ink-muted hover:text-ink mt-2 block"
             >
               Gửi lại yêu cầu mã OTP
             </button>
           </form>
         )}
 
-        <div className="mt-8 pt-6 border-t border-slate-800 flex justify-center text-sm text-slate-400">
-          <Link to="/login" className="flex items-center gap-1.5 hover:text-white transition-colors">
+        <div className="mt-8 pt-6 border-t border-slate-200 flex justify-center text-sm text-ink-muted">
+          <Link to="/login" className="flex items-center gap-1.5 hover:text-ink transition-colors">
             <ArrowLeft className="w-4 h-4" /> Quay lại Đăng nhập
           </Link>
         </div>

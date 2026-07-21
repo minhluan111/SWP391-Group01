@@ -18,10 +18,10 @@ import toast from 'react-hot-toast';
 import { formatDateTime24 } from '../lib/dateTimeFormat';
 
 const ROLE_COLORS: Record<string, string> = {
-  Customer: '#6366f1',
+  Customer: '#007BFF',
   Staff: '#10b981',
   Manager: '#f59e0b',
-  Admin: '#ef4444',
+  Admin: '#003366',
 };
 
 const ROLE_LABELS: Record<string, string> = {
@@ -124,20 +124,20 @@ export default function AdminDashboard() {
   }, [users]);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
+    <div className="min-h-screen bg-surface text-ink p-6 md:p-10">
       
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold tracking-wide text-ink flex items-center gap-2">
             <ShieldCheck className="text-primary-500 w-8 h-8" />
             Quản trị viên (Admin) Dashboard
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Quản lý danh sách tài khoản, khóa/mở khóa hoạt động và phân quyền quản trị.</p>
+          <p className="text-sm text-ink-muted mt-1">Quản lý danh sách tài khoản, khóa/mở khóa hoạt động và phân quyền quản trị.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
             onClick={fetchUsers} 
-            className="flex items-center gap-1.5 px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors text-sm"
+            className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-100 text-ink-muted transition-colors text-sm"
           >
             <RefreshCw className="w-4 h-4" /> Làm mới danh sách
           </button>
@@ -147,8 +147,8 @@ export default function AdminDashboard() {
       {/* Charts overview */}
       {!loading && users.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Phân bố vai trò</h3>
+          <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-ink-muted mb-4 border-b border-slate-200 pb-3">Phân bố vai trò</h3>
             <ResponsiveContainer width="100%" height={220}>
               <PieChart>
                 <Pie
@@ -170,15 +170,15 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Trạng thái tài khoản</h3>
+          <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-ink-muted mb-4 border-b border-slate-200 pb-3">Trạng thái tài khoản</h3>
             <ResponsiveContainer width="100%" height={220}>
               <BarChart data={statusChartData}>
-                <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                <XAxis dataKey="name" stroke="#94a3b8" fontSize={12} />
-                <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                <XAxis dataKey="name" stroke="#44474E" fontSize={12} />
+                <YAxis stroke="#44474E" fontSize={12} allowDecimals={false} />
                 <Tooltip
-                  contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                  contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
                 />
                 <Bar dataKey="value" name="Số tài khoản" radius={[6, 6, 0, 0]}>
                   {statusChartData.map((entry) => (
@@ -189,20 +189,20 @@ export default function AdminDashboard() {
             </ResponsiveContainer>
           </div>
 
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="font-bold text-sm text-slate-300 mb-4 border-b border-slate-800 pb-3">Đăng ký theo tháng</h3>
+          <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+            <h3 className="font-bold text-sm text-ink-muted mb-4 border-b border-slate-200 pb-3">Đăng ký theo tháng</h3>
             {registrationChartData.length === 0 ? (
-              <p className="text-sm text-slate-500 text-center py-16">Chưa có dữ liệu.</p>
+              <p className="text-sm text-ink-muted text-center py-16">Chưa có dữ liệu.</p>
             ) : (
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={registrationChartData}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#334155" />
-                  <XAxis dataKey="month" stroke="#94a3b8" fontSize={11} />
-                  <YAxis stroke="#94a3b8" fontSize={12} allowDecimals={false} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="month" stroke="#44474E" fontSize={11} />
+                  <YAxis stroke="#44474E" fontSize={12} allowDecimals={false} />
                   <Tooltip
-                    contentStyle={{ backgroundColor: '#0f172a', border: '1px solid #334155', borderRadius: '8px' }}
+                    contentStyle={{ backgroundColor: '#ffffff', border: '1px solid #e2e8f0', borderRadius: '8px' }}
                   />
-                  <Bar dataKey="count" name="Tài khoản mới" fill="#6366f1" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="count" name="Tài khoản mới" fill="#007BFF" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             )}
@@ -210,15 +210,15 @@ export default function AdminDashboard() {
         </div>
       )}
 
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+      <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
         {loading ? (
-          <div className="p-16 text-center text-slate-500">Đang tải danh sách người dùng...</div>
+          <div className="p-16 text-center text-ink-muted">Đang tải danh sách người dùng...</div>
         ) : users.length === 0 ? (
-          <div className="p-16 text-center text-slate-500">Không có tài khoản nào được ghi nhận.</div>
+          <div className="p-16 text-center text-ink-muted">Không có tài khoản nào được ghi nhận.</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-sm text-slate-300 border-collapse">
-              <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-semibold border-b border-slate-850">
+            <table className="w-full text-left text-sm text-ink border-collapse">
+              <thead className="bg-slate-50 text-ink-muted text-xs uppercase font-semibold border-b border-slate-200">
                 <tr>
                   <th className="p-4">Họ Tên & Đăng ký</th>
                   <th className="p-4">Email</th>
@@ -228,23 +228,23 @@ export default function AdminDashboard() {
                   <th className="p-4 text-center">Hành động khóa</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-850">
+              <tbody className="divide-y divide-slate-200">
                 {users.map((u) => (
-                  <tr key={u.id} className="hover:bg-slate-800/10 transition-colors">
+                  <tr key={u.id} className="hover:bg-slate-50 transition-colors">
                     <td className="p-4">
-                      <span className="font-bold text-slate-100 block">{u.full_name}</span>
-                      <span className="text-xs text-slate-500">
+                      <span className="font-bold text-ink block">{u.full_name}</span>
+                      <span className="text-xs text-ink-muted">
                         Đăng ký: {formatDateTime24(u.created_at)}
                       </span>
                     </td>
-                    <td className="p-4 text-slate-200">{u.email}</td>
-                    <td className="p-4 text-slate-300">{u.phone || '—'}</td>
+                    <td className="p-4 text-ink">{u.email}</td>
+                    <td className="p-4 text-ink-muted">{u.phone || '—'}</td>
                     <td className="p-4 text-center">
                       <select 
                         value={u.role_name || 'Customer'}
                         onChange={(e) => handleRoleChange(u.id, e.target.value)}
                         disabled={actionLoading === u.id}
-                        className="bg-slate-950 border border-slate-700 text-xs rounded-lg px-2.5 py-1.5 font-semibold text-slate-100 focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer"
+                        className="bg-white border border-slate-200 text-xs rounded-lg px-2.5 py-1.5 font-semibold text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 cursor-pointer"
                       >
                         <option value="Customer">Khách hàng</option>
                         <option value="Staff">Nhân viên</option>
@@ -254,9 +254,9 @@ export default function AdminDashboard() {
                     </td>
                     <td className="p-4 text-center">
                       {u.is_active ? (
-                        <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-500/20">Hoạt động</span>
+                        <span className="bg-emerald-500/10 text-emerald-600 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-500/20">Hoạt động</span>
                       ) : (
-                        <span className="bg-rose-500/10 text-rose-500 text-[10px] px-2.5 py-1 rounded-full font-bold border border-rose-500/20">Bị khóa</span>
+                        <span className="bg-rose-500/10 text-rose-600 text-[10px] px-2.5 py-1 rounded-full font-bold border border-rose-500/20">Bị khóa</span>
                       )}
                     </td>
                     <td className="p-4 text-center">
@@ -264,8 +264,8 @@ export default function AdminDashboard() {
                         onClick={() => handleStatusToggle(u.id, u.is_active)}
                         disabled={actionLoading === u.id}
                         className={`font-semibold py-1.5 px-4 text-xs rounded-xl transition-all ${u.is_active 
-                          ? 'bg-rose-500/10 text-rose-400 border border-rose-500/20 hover:bg-rose-500/20' 
-                          : 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 hover:bg-emerald-500/20'}`}
+                          ? 'bg-rose-500/10 text-rose-600 border border-rose-500/20 hover:bg-rose-500/20' 
+                          : 'bg-emerald-500/10 text-emerald-600 border border-emerald-500/20 hover:bg-emerald-500/20'}`}
                       >
                         {u.is_active ? 'Khóa Tài Khoản' : 'Kích Hoạt Lại'}
                       </button>

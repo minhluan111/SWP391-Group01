@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
+import { User as UserIcon, LogOut, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '../../context/AuthContext';
+import BrandLogo from './BrandLogo';
 
 export default function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -27,33 +28,27 @@ export default function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full bg-slate-900/95 backdrop-blur-md border-b border-slate-800/80 shadow-md text-white">
+    <nav className="sticky top-0 z-50 w-full bg-brand-primary border-b border-blue-600 shadow-md shadow-blue-500/20 text-white">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex items-center">
-            <Link to="/" className="flex items-center gap-2.5">
-              <div className="bg-primary-600 text-white p-2 rounded-xl shadow-lg shadow-primary-500/25">
-                <Car className="w-5 h-5" />
-              </div>
-              <span className="text-xl font-black tracking-wider text-slate-100">Smart Parking</span>
-            </Link>
+            <BrandLogo title="Smart Parking System" size="md" textClassName="text-white" />
           </div>
           
-          {/* Menu items depending on role */}
           <div className="hidden md:flex items-center space-x-8">
             {isAuthenticated && user ? (
               <>
-                <Link to="/" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Trang chủ</Link>
-                <Link to="/find-slot" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Đặt chỗ đỗ xe</Link>
-                <Link to="/pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Bảng giá</Link>
+                <Link to="/" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Trang chủ</Link>
+                <Link to="/find-slot" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Đặt chỗ đỗ xe</Link>
+                <Link to="/pricing" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Bảng giá</Link>
               </>
             ) : (
               <>
-                <Link to="/" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Trang chủ</Link>
-                <Link to="/find-slot" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Tra cứu chỗ đậu</Link>
-                <Link to="/pricing" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Bảng giá</Link>
-                <Link to="/guide" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Hướng dẫn</Link>
-                <Link to="/contact" className="text-sm font-medium text-slate-300 hover:text-white transition-colors">Liên hệ</Link>
+                <Link to="/" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Trang chủ</Link>
+                <Link to="/find-slot" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Tra cứu chỗ đậu</Link>
+                <Link to="/pricing" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Bảng giá</Link>
+                <Link to="/guide" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Hướng dẫn</Link>
+                <Link to="/contact" className="text-sm font-medium text-white/90 hover:text-white transition-colors">Liên hệ</Link>
               </>
             )}
           </div>
@@ -63,9 +58,9 @@ export default function Navbar() {
               <div className="relative" ref={dropdownRef}>
                 <button 
                   onClick={() => setShowDropdown(!showDropdown)}
-                  className="flex items-center gap-2 text-sm font-semibold text-slate-200 hover:text-white transition-colors bg-slate-950/60 px-3.5 py-1.5 rounded-xl border border-slate-850 hover:bg-slate-950 focus:outline-none"
+                  className="flex items-center gap-2 text-sm font-semibold text-white hover:bg-white/15 transition-colors bg-white/10 px-3.5 py-1.5 rounded-xl border border-white/25 focus:outline-none"
                 >
-                  <div className="bg-primary-500/20 text-primary-400 p-1 rounded-lg">
+                  <div className="bg-white/20 text-white p-1 rounded-lg">
                     <UserIcon className="w-3.5 h-3.5" />
                   </div>
                   <span className="hidden sm:inline">{user.full_name}</span>
@@ -75,11 +70,13 @@ export default function Navbar() {
                 </button>
 
                 {showDropdown && (
-                  <div className="absolute right-0 mt-2.5 w-56 rounded-2xl bg-slate-900 border border-slate-800 shadow-2xl p-2.5 space-y-1.5 z-50">
-                    <div className="px-3 py-2 border-b border-slate-850 mb-1.5 text-left">
-                      <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Tài khoản</p>
-                      <p className="text-sm font-extrabold text-slate-100 truncate mt-0.5">{user.full_name}</p>
-                      <span className="inline-block text-[9px] bg-primary-500/10 text-primary-400 font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full border border-primary-500/20 mt-1.5">
+                  <div className="absolute right-0 mt-2.5 w-56 rounded-2xl bg-white border border-slate-200 shadow-xl shadow-slate-900/10 overflow-hidden z-50">
+                    <div className="h-1.5 gradient-brand" />
+                    <div className="p-2.5 space-y-1.5">
+                    <div className="px-3 py-2 border-b border-slate-100 mb-1.5 text-left">
+                      <p className="text-[10px] text-brand-muted font-bold uppercase tracking-wider">Tài khoản</p>
+                      <p className="text-sm font-extrabold text-brand-navy truncate mt-0.5">{user.full_name}</p>
+                      <span className="inline-block text-[9px] bg-brand-primary text-white font-extrabold uppercase tracking-wider px-2 py-0.5 rounded-full mt-1.5">
                         {user.role === 'Admin' ? 'Quản trị viên' : user.role === 'Manager' ? 'Quản lý' : user.role === 'Staff' ? 'Nhân viên' : 'Khách hàng'}
                       </span>
                     </div>
@@ -87,7 +84,7 @@ export default function Navbar() {
                     <Link 
                       to="/profile" 
                       onClick={() => setShowDropdown(false)}
-                      className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all font-semibold"
+                      className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-ink-muted hover:bg-surface hover:text-ink transition-all font-semibold"
                     >
                       <UserIcon className="w-4 h-4 text-slate-400" />
                       Hồ sơ cá nhân
@@ -97,9 +94,9 @@ export default function Navbar() {
                       <Link 
                         to="/admin" 
                         onClick={() => setShowDropdown(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all font-semibold"
+                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-ink-muted hover:bg-surface hover:text-ink transition-all font-semibold"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-primary-400" />
+                        <LayoutDashboard className="w-4 h-4 text-primary-500" />
                         Dashboard Admin
                       </Link>
                     )}
@@ -108,9 +105,9 @@ export default function Navbar() {
                       <Link 
                         to="/manager" 
                         onClick={() => setShowDropdown(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all font-semibold"
+                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-ink-muted hover:bg-surface hover:text-ink transition-all font-semibold"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-primary-400" />
+                        <LayoutDashboard className="w-4 h-4 text-primary-500" />
                         Dashboard Manager
                       </Link>
                     )}
@@ -119,29 +116,30 @@ export default function Navbar() {
                       <Link 
                         to="/staff" 
                         onClick={() => setShowDropdown(false)}
-                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-slate-300 hover:bg-slate-800/60 hover:text-white transition-all font-semibold"
+                        className="flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-ink-muted hover:bg-surface hover:text-ink transition-all font-semibold"
                       >
-                        <LayoutDashboard className="w-4 h-4 text-primary-400" />
+                        <LayoutDashboard className="w-4 h-4 text-primary-500" />
                         Dashboard Nhân viên
                       </Link>
                     )}
 
-                    <div className="border-t border-slate-850 pt-1.5 mt-1.5">
+                    <div className="border-t border-slate-100 pt-1.5 mt-1.5">
                       <button 
                         onClick={() => { setShowDropdown(false); handleLogout(); }}
-                        className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-rose-450 hover:bg-rose-500/10 transition-all font-semibold text-left"
+                        className="w-full flex items-center gap-2.5 px-3.5 py-2 rounded-xl text-sm text-rose-600 hover:bg-rose-50 transition-all font-semibold text-left"
                       >
                         <LogOut className="w-4 h-4" />
                         Đăng xuất
                       </button>
+                    </div>
                     </div>
                   </div>
                 )}
               </div>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-semibold text-slate-300 hover:text-white">Đăng nhập</Link>
-                <Link to="/register" className="text-sm font-bold bg-primary-600 hover:bg-primary-500 text-white px-4 py-2 rounded-xl transition-all shadow-md shadow-primary-500/20">Đăng ký</Link>
+                <Link to="/login" className="text-sm font-semibold text-white/90 hover:text-white">Đăng nhập</Link>
+                <Link to="/register" className="text-sm font-bold bg-brand-navy hover:opacity-90 text-white px-4 py-2 rounded-xl transition-all shadow-md">Đăng ký</Link>
               </>
             )}
           </div>

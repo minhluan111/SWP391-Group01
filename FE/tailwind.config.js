@@ -7,19 +7,38 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Primary — xanh sáng #007BFF (Header, nút, icon, nhấn — hiện đại, có màu)
         primary: {
-          50: '#eff6ff',
-          100: '#dbeafe',
-          200: '#bfdbfe',
-          300: '#93c5fd',
-          400: '#60a5fa',
-          500: '#3b82f6',
-          600: '#2563eb',
-          700: '#1d4ed8',
-          800: '#1e40af',
-          900: '#1e3a8a',
+          50: '#E6F2FF',
+          100: '#CCE5FF',
+          200: '#99CBFF',
+          300: '#66B0FF',
+          400: '#3396FF',
+          500: '#007BFF',
+          600: '#0062CC',
+          700: '#004A99',
+          800: '#003166',
+          900: '#001933',
         },
-        dark: '#0f172a',
+        // Navy — #003366 (tiêu đề lớn, nhấn thương hiệu đậm)
+        navy: {
+          DEFAULT: '#003366',
+          50: '#E8EEF5',
+          100: '#D1DDEB',
+          200: '#A3BBD6',
+          300: '#7599C2',
+          400: '#4777AD',
+          500: '#003366',
+          600: '#002952',
+          700: '#001F3D',
+          800: '#001429',
+          900: '#000A14',
+        },
+        surface: '#F7F9FC',
+        ink: {
+          DEFAULT: '#1A1C1E',
+          muted: '#44474E',
+        },
       }
     },
   },

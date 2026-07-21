@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Car, Eye, EyeOff } from 'lucide-react';
+import { Eye, EyeOff } from 'lucide-react';
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,6 +11,7 @@ import FormFieldError from '../components/ui/FormFieldError';
 import PasswordStrengthBar from '../components/ui/PasswordStrengthBar';
 import PasswordMatchIndicator from '../components/ui/PasswordMatchIndicator';
 import { authInputClass } from '../lib/formStyles';
+import BrandLogo from '../components/layout/BrandLogo';
 
 export default function Register() {
   const [showPassword, setShowPassword] = useState(false);
@@ -50,70 +51,70 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex">
-      <div className="hidden lg:flex lg:w-1/2 bg-dark flex-col justify-between p-12 text-white">
+      {/* Left Panel — navy #003366 */}
+      <div className="hidden lg:flex lg:w-1/2 bg-brand-navy flex-col justify-between p-12 text-white">
         <div>
-          <Link to="/" className="flex items-center gap-2 mb-16">
-            <div className="bg-primary-600 text-white p-2 rounded-lg">
-              <Car className="w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold">Smart Parking System</span>
-          </Link>
+          <div className="mb-16">
+            <BrandLogo title="Smart Parking System" size="lg" textClassName="text-white" />
+          </div>
           
-          <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-6">
+          <h1 className="text-4xl lg:text-5xl font-bold leading-tight mb-6 text-white">
             Tạo tài khoản để sử dụng hệ thống giữ xe thông minh
           </h1>
-          <p className="text-lg text-slate-300 max-w-md mb-8">
+          <p className="text-lg text-white/80 max-w-md mb-8">
             Đăng ký tài khoản để đặt chỗ, quản lý vé xe và theo dõi lịch sử gửi xe nhanh chóng.
           </p>
           
           <div className="grid grid-cols-2 gap-4 mb-12">
-             <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <span className="text-sm font-medium text-slate-200">Đặt chỗ trước dễ dàng</span>
+             <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg border border-white/20">
+               <span className="text-sm font-medium text-white">Đặt chỗ trước dễ dàng</span>
              </div>
-             <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <span className="text-sm font-medium text-slate-200">Theo dõi vé thông minh</span>
+             <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg border border-white/20">
+               <span className="text-sm font-medium text-white">Theo dõi vé thông minh</span>
              </div>
-             <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <span className="text-sm font-medium text-slate-200">Thanh toán tiện lợi</span>
+             <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg border border-white/20">
+               <span className="text-sm font-medium text-white">Thanh toán tiện lợi</span>
              </div>
-             <div className="flex items-center gap-3 bg-slate-800/50 p-3 rounded-lg border border-slate-700">
-               <span className="text-sm font-medium text-slate-200">Quản lý lịch sử gửi xe</span>
+             <div className="flex items-center gap-3 bg-white/10 p-3 rounded-lg border border-white/20">
+               <span className="text-sm font-medium text-white">Quản lý lịch sử gửi xe</span>
              </div>
           </div>
 
-          <div className="relative h-48 bg-slate-800 rounded-xl overflow-hidden flex items-center justify-center border border-slate-700">
-            <Car className="w-24 h-24 text-slate-600" />
+          <div className="relative h-48 rounded-xl overflow-hidden border border-white/20 shadow-lg shadow-black/20">
+            <img
+              src="/images/auth-parking.png"
+              alt="Bãi đỗ xe thông minh"
+              className="absolute inset-0 w-full h-full object-cover"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-[#003366]/55 via-transparent to-transparent" />
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-8 pt-12 border-t border-slate-800">
+        <div className="grid grid-cols-3 gap-8 pt-12 border-t border-white/20">
           <div>
             <div className="text-3xl font-bold text-white mb-1">500+</div>
-            <div className="text-sm text-slate-400">Chỗ đậu</div>
+            <div className="text-sm text-white/70">Chỗ đậu</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-white mb-1">1,200+</div>
-            <div className="text-sm text-slate-400">Lượt xe/ngày</div>
+            <div className="text-sm text-white/70">Lượt xe/ngày</div>
           </div>
           <div>
             <div className="text-3xl font-bold text-white mb-1">24/7</div>
-            <div className="text-sm text-slate-400">Hoạt động</div>
+            <div className="text-sm text-white/70">Hoạt động</div>
           </div>
         </div>
       </div>
 
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white overflow-y-auto">
         <div className="max-w-md w-full py-8">
-          <Link to="/" className="flex items-center gap-2 mb-8 lg:hidden justify-center">
-            <div className="bg-primary-600 text-white p-2 rounded-lg">
-              <Car className="w-6 h-6" />
-            </div>
-            <span className="text-2xl font-bold text-dark">Smart Parking</span>
-          </Link>
+          <div className="mb-8 lg:hidden flex justify-center">
+            <BrandLogo title="Smart Parking System" size="lg" textClassName="text-brand-navy" />
+          </div>
 
           <div className="mb-10">
-            <h2 className="text-3xl font-bold text-dark mb-2">Đăng ký tài khoản</h2>
-            <p className="text-gray-500">Tạo tài khoản mới để sử dụng hệ thống</p>
+            <h2 className="text-3xl font-bold text-brand-navy mb-2">Đăng ký tài khoản</h2>
+            <p className="text-brand-muted">Tạo tài khoản mới để sử dụng hệ thống</p>
           </div>
 
           <form className="space-y-5" onSubmit={handleSubmit(onSubmit)} noValidate>
@@ -189,7 +190,7 @@ export default function Register() {
               Mật khẩu phải có ít nhất 6 ký tự
             </p>
 
-            <button disabled={isSubmitting} type="submit" className="w-full bg-primary-600 text-white font-medium py-3 rounded-lg hover:bg-primary-700 transition-colors mt-6 disabled:opacity-50">
+            <button disabled={isSubmitting} type="submit" className="w-full bg-brand-primary text-white font-medium py-3 rounded-lg hover:opacity-90 transition-colors mt-6 disabled:opacity-50">
               {isSubmitting ? 'Đang xử lý...' : 'Tạo tài khoản'}
             </button>
           </form>
@@ -213,7 +214,7 @@ export default function Register() {
           </div>
 
           <p className="mt-8 text-center text-sm text-gray-600">
-            Đã có tài khoản? <Link to="/login" className="font-medium text-primary-600 hover:text-primary-700">Đăng nhập ngay</Link>
+            Đã có tài khoản? <Link to="/login" className="font-medium text-brand-primary hover:underline">Đăng nhập ngay</Link>
           </p>
         </div>
       </div>

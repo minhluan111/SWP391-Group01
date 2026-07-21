@@ -187,11 +187,11 @@ export default function FindSlot() {
 
   const getStatusColor = (status: string) => {
     switch(status) {
-      case 'available': return 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20';
-      case 'occupied': return 'bg-rose-500/10 text-rose-400 border-rose-500/20';
-      case 'reserved': return 'bg-amber-500/10 text-amber-400 border-amber-500/20';
-      case 'maintenance': return 'bg-slate-800 text-slate-400 border-slate-700';
-      default: return 'bg-slate-800 text-slate-400 border-slate-700';
+      case 'available': return 'bg-emerald-50 text-emerald-700 border-emerald-200';
+      case 'occupied': return 'bg-rose-50 text-rose-700 border-rose-200';
+      case 'reserved': return 'bg-amber-50 text-amber-700 border-amber-200';
+      case 'maintenance': return 'bg-slate-100 text-slate-600 border-slate-200';
+      default: return 'bg-slate-100 text-slate-600 border-slate-200';
     }
   };
 
@@ -206,43 +206,43 @@ export default function FindSlot() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
+    <div className="min-h-screen bg-surface text-ink p-6 md:p-10">
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
         <div>
-          <h1 className="text-3xl font-extrabold text-slate-100 mb-2">Tra cứu & Đặt vị trí</h1>
-          <p className="text-sm text-slate-400">Xem sơ đồ 2D và chọn vị trí trống thời gian thực</p>
+          <h1 className="text-3xl font-extrabold text-ink mb-2">Tra cứu & Đặt vị trí</h1>
+          <p className="text-sm text-ink-muted">Xem sơ đồ 2D và chọn vị trí trống thời gian thực</p>
         </div>
       </div>
 
       {/* STEP 1: SELECT VEHICLE TYPE & AUTO RECOMMEND FLOOR */}
-      <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl mb-8">
+      <div className="bg-white border border-slate-200 p-6 rounded-2xl mb-8">
         <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-          <Sparkles className="w-5 h-5 text-indigo-400" />
+          <Sparkles className="w-5 h-5 text-primary-500" />
           Chọn loại xe của bạn để nhận gợi ý tầng đỗ
         </h2>
         <div className="flex flex-wrap gap-4 mb-4">
           <button 
             type="button"
             onClick={() => handleSelectVehicleType('motorbike')}
-            className={`flex-1 min-w-[140px] px-6 py-4 rounded-xl border font-bold text-center transition-all ${selectedVehicleType === 'motorbike' ? 'border-primary-500 bg-primary-950/40 text-primary-300' : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'}`}
+            className={`flex-1 min-w-[140px] px-6 py-4 rounded-xl border font-bold text-center transition-all ${selectedVehicleType === 'motorbike' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-slate-200 bg-white text-ink-muted hover:text-ink'}`}
           >
             🏍️ Xe Máy
-            <span className="block text-xs font-normal text-slate-500 mt-1">Gợi ý: Tầng 1</span>
+            <span className="block text-xs font-normal text-ink-muted mt-1">Gợi ý: Tầng 1</span>
           </button>
           
           <button 
             type="button"
             onClick={() => handleSelectVehicleType('car')}
-            className={`flex-1 min-w-[140px] px-6 py-4 rounded-xl border font-bold text-center transition-all ${selectedVehicleType === 'car' ? 'border-primary-500 bg-primary-950/40 text-primary-300' : 'border-slate-800 bg-slate-950 text-slate-400 hover:text-white'}`}
+            className={`flex-1 min-w-[140px] px-6 py-4 rounded-xl border font-bold text-center transition-all ${selectedVehicleType === 'car' ? 'border-primary-500 bg-primary-50 text-primary-600' : 'border-slate-200 bg-white text-ink-muted hover:text-ink'}`}
           >
             🚗 Ô Tô
-            <span className="block text-xs font-normal text-slate-500 mt-1">Gợi ý: Tầng 2</span>
+            <span className="block text-xs font-normal text-ink-muted mt-1">Gợi ý: Tầng 2</span>
           </button>
         </div>
 
         {suggestedFloor && (
-          <div className="bg-primary-950/20 border border-primary-900/40 p-4 rounded-xl flex items-center justify-between text-sm">
-            <span className="text-primary-300">
+          <div className="bg-primary-50 border border-primary-200 p-4 rounded-xl flex items-center justify-between text-sm">
+            <span className="text-primary-700">
               💡 Hệ thống gợi ý bạn chọn tầng đỗ: <strong>{suggestedFloor}</strong>
             </span>
             <span className="bg-primary-600 text-white text-xs font-bold px-3 py-1 rounded-full">Khuyên dùng</span>
@@ -255,14 +255,14 @@ export default function FindSlot() {
         <div className={`w-full ${selectedSlot ? 'lg:w-2/3' : 'lg:w-full'} transition-all duration-300 space-y-6`}>
           
           {/* Controls toolbar */}
-          <div className="flex flex-wrap items-center justify-between gap-4 bg-slate-900 p-4 rounded-2xl border border-slate-800">
+          <div className="flex flex-wrap items-center justify-between gap-4 bg-white p-4 rounded-2xl border border-slate-200">
             {/* Floor Selector */}
             <div className="flex items-center gap-2">
-              <span className="text-xs text-slate-400 font-semibold uppercase">Chọn Tầng:</span>
+              <span className="text-xs text-ink-muted font-semibold uppercase">Chọn Tầng:</span>
               <select
                 value={selectedFloorName}
                 onChange={(e) => setSelectedFloorName(e.target.value)}
-                className="bg-slate-950 border border-slate-800 text-sm rounded-lg px-3 py-1.5 font-bold"
+                className="bg-white border border-slate-200 text-ink text-sm rounded-lg px-3 py-1.5 font-bold"
               >
                 <option value="all">Tất cả tầng</option>
                 {floorsList.map(f => (
@@ -280,7 +280,7 @@ export default function FindSlot() {
                   className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
                     activeTab === tab 
                       ? 'bg-primary-600 text-white shadow-lg shadow-primary-600/25' 
-                      : 'bg-slate-950 text-slate-400 hover:text-white border border-slate-800'
+                      : 'bg-white text-ink-muted hover:text-ink border border-slate-200'
                   }`}
                 >
                   {tab === 'all' && 'Tất cả'}
@@ -294,9 +294,9 @@ export default function FindSlot() {
 
           {/* Sơ đồ bãi đỗ */}
           {loading ? (
-             <div className="text-center py-16 text-slate-500">Đang tải sơ đồ bãi đỗ...</div>
+             <div className="text-center py-16 text-ink-muted">Đang tải sơ đồ bãi đỗ...</div>
           ) : filteredSlots.length === 0 ? (
-             <div className="text-center py-16 text-slate-500 border border-dashed border-slate-800 rounded-2xl">
+             <div className="text-center py-16 text-ink-muted border border-dashed border-slate-200 rounded-2xl">
                Không tìm thấy ô đỗ nào phù hợp với bộ lọc hiện tại.
              </div>
           ) : (
@@ -311,8 +311,8 @@ export default function FindSlot() {
                   onClick={() => setSelectedSlot(slot)}
                   className={`relative p-5 rounded-2xl border cursor-pointer transition-all duration-300 ${
                     selectedSlot?.id === slot.id 
-                      ? 'border-primary-500 shadow-xl shadow-primary-500/10 bg-primary-950/20 scale-105' 
-                      : 'border-slate-800 bg-slate-900/60 hover:border-slate-700'
+                      ? 'border-primary-500 shadow-xl shadow-primary-500/10 bg-primary-50 scale-105' 
+                      : 'border-slate-200 bg-white hover:border-slate-300'
                   } flex flex-col items-center justify-center aspect-square group`}
                 >
                   <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${
@@ -322,12 +322,12 @@ export default function FindSlot() {
                   }`}></div>
                   
                   {slot.type === 'car' ? (
-                    <Car className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-primary-400 group-hover:text-primary-300' : 'text-slate-600 opacity-60'}`} />
+                    <Car className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-primary-500 group-hover:text-primary-500' : 'text-slate-400 opacity-60'}`} />
                   ) : (
-                    <Bike className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-orange-400 group-hover:text-orange-300' : 'text-slate-600 opacity-60'}`} />
+                    <Bike className={`w-10 h-10 mb-2 transition-colors duration-300 ${slot.status === 'available' ? 'text-orange-400 group-hover:text-orange-500' : 'text-slate-400 opacity-60'}`} />
                   )}
-                  <span className="font-bold text-lg text-slate-100 group-hover:text-primary-400 transition-colors font-mono">{slot.id}</span>
-                  <span className="text-[10px] text-slate-500 mt-1 font-semibold">{slot.floor}</span>
+                  <span className="font-bold text-lg text-ink group-hover:text-primary-500 transition-colors font-mono">{slot.id}</span>
+                  <span className="text-[10px] text-ink-muted mt-1 font-semibold">{slot.floor}</span>
                 </div>
               ))}
             </motion.div>
@@ -343,28 +343,28 @@ export default function FindSlot() {
             exit={{ opacity: 0, x: 20 }}
             className="w-full lg:w-1/3"
           >
-            <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 sticky top-24">
+            <div className="bg-white border border-slate-200 rounded-2xl p-6 sticky top-24 shadow-sm">
               <div className="flex justify-between items-start mb-6">
                 <div>
-                  <h3 className="text-2xl font-black text-slate-100 mb-1 font-mono">Ô đỗ {selectedSlot.id}</h3>
-                  <p className="text-xs text-slate-400 font-semibold">{selectedSlot.floor}</p>
+                  <h3 className="text-2xl font-black text-ink mb-1 font-mono">Ô đỗ {selectedSlot.id}</h3>
+                  <p className="text-xs text-ink-muted font-semibold">{selectedSlot.floor}</p>
                 </div>
-                <button onClick={() => setSelectedSlot(null)} className="text-slate-400 hover:text-white bg-slate-950 p-2 rounded-full border border-slate-850">
+                <button onClick={() => setSelectedSlot(null)} className="text-ink-muted hover:text-ink bg-slate-50 p-2 rounded-full border border-slate-200">
                   <span className="sr-only">Đóng</span>
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
                 </button>
               </div>
 
               <div className="space-y-4 mb-8">
-                <div className="flex justify-between items-center py-3 border-b border-slate-850">
-                  <span className="text-sm text-slate-400">Trạng thái</span>
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-sm text-ink-muted">Trạng thái</span>
                   <span className={`px-3 py-1 rounded-full text-xs font-bold border ${getStatusColor(selectedSlot.status)}`}>
                     {getStatusText(selectedSlot.status)}
                   </span>
                 </div>
-                <div className="flex justify-between items-center py-3 border-b border-slate-850">
-                  <span className="text-sm text-slate-400">Loại xe phù hợp</span>
-                  <span className="font-bold text-slate-200 capitalize text-sm">{selectedSlot.type === 'car' ? '🚗 Ô tô' : '🏍️ Xe máy'}</span>
+                <div className="flex justify-between items-center py-3 border-b border-slate-200">
+                  <span className="text-sm text-ink-muted">Loại xe phù hợp</span>
+                  <span className="font-bold text-ink capitalize text-sm">{selectedSlot.type === 'car' ? '🚗 Ô tô' : '🏍️ Xe máy'}</span>
                 </div>
               </div>
 
@@ -376,15 +376,15 @@ export default function FindSlot() {
                   Tiến hành Đặt chỗ
                 </button>
               ) : selectedSlot.status === 'occupied' ? (
-                <div className="w-full bg-rose-500/10 text-rose-400 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-rose-500/20 text-sm">
+                <div className="w-full bg-rose-50 text-rose-600 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-rose-200 text-sm">
                   <Clock className="w-5 h-5" /> Đang có xe đỗ tại đây
                 </div>
               ) : selectedSlot.status === 'maintenance' ? (
-                 <div className="w-full bg-slate-850 text-slate-500 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-slate-800 text-sm">
+                 <div className="w-full bg-slate-100 text-slate-500 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-slate-200 text-sm">
                    <Wrench className="w-5 h-5" /> Vị trí đang bảo trì
                  </div>
               ) : (
-                <div className="w-full bg-amber-500/10 text-amber-400 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-amber-500/20 text-sm">
+                <div className="w-full bg-amber-50 text-amber-600 font-bold py-3.5 rounded-xl text-center flex items-center justify-center gap-2 border border-amber-200 text-sm">
                   Đã được khách khác đặt
                 </div>
               )}
@@ -396,26 +396,26 @@ export default function FindSlot() {
 
       {/* Booking Modal */}
       {showBookingModal && (
-        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl w-full max-w-md p-6 text-white">
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="bg-white border border-slate-200 rounded-2xl w-full max-w-md p-6 text-ink">
             <h2 className="text-xl font-bold mb-4">Xác nhận Đặt vị trí</h2>
             
-            <div className="bg-slate-950 p-4 rounded-xl border border-slate-850 mb-6 text-sm space-y-2">
-              <p className="text-slate-400">Vị trí: <strong className="text-primary-400 font-mono text-base">{selectedSlot?.id}</strong></p>
-              <p className="text-slate-400">Tầng: <strong className="text-slate-200">{selectedSlot?.floor}</strong></p>
-              <p className="text-slate-400">Phương tiện: <span className="capitalize font-bold text-slate-200">{selectedSlot?.type === 'car' ? '🚗 Ô tô' : '🏍️ Xe máy'}</span></p>
-              <div className="flex gap-2 text-xs text-amber-400 font-medium bg-amber-500/5 p-2 rounded-lg border border-amber-500/10 mt-3">
+            <div className="bg-surface p-4 rounded-xl border border-slate-200 mb-6 text-sm space-y-2">
+              <p className="text-ink-muted">Vị trí: <strong className="text-primary-500 font-mono text-base">{selectedSlot?.id}</strong></p>
+              <p className="text-ink-muted">Tầng: <strong className="text-ink">{selectedSlot?.floor}</strong></p>
+              <p className="text-ink-muted">Phương tiện: <span className="capitalize font-bold text-ink">{selectedSlot?.type === 'car' ? '🚗 Ô tô' : '🏍️ Xe máy'}</span></p>
+              <div className="flex gap-2 text-xs text-amber-700 font-medium bg-amber-50 p-2 rounded-lg border border-amber-200 mt-3">
                 <ShieldAlert className="w-4 h-4 flex-shrink-0" />
                 <span>Không yêu cầu thanh toán online. Bạn sẽ thanh toán tiền mặt trực tiếp cho nhân viên khi xe ra bãi đỗ.</span>
               </div>
             </div>
             
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Chọn biển số xe đỗ</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Chọn biển số xe đỗ</label>
               <select 
                 value={selectedVehicleId} 
                 onChange={(e) => setSelectedVehicleId(Number(e.target.value))}
-                className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-850 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm cursor-pointer"
+                className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 text-sm cursor-pointer"
               >
                 <option value="">-- Chọn phương tiện --</option>
                 {eligibleVehicles.map(v => (
@@ -423,20 +423,20 @@ export default function FindSlot() {
                 ))}
               </select>
               {vehicles.filter(v => v.vehicle_type === selectedSlot?.type).length > 0 && eligibleVehicles.length === 0 && (
-                <p className="text-amber-400 text-xs mt-2.5">
+                <p className="text-amber-700 text-xs mt-2.5">
                   Tất cả xe loại này đang có đặt chỗ chờ hoặc đang đỗ trong bãi. Vui lòng hoàn tất lượt hiện tại trước.
                 </p>
               )}
               {vehicles.filter(v => v.vehicle_type === selectedSlot?.type).length === 0 && (
-                <p className="text-rose-400 text-xs mt-2.5">
+                <p className="text-rose-600 text-xs mt-2.5">
                   ⚠️ Bạn chưa đăng ký phương tiện loại này trong hồ sơ cá nhân. Vui lòng thêm phương tiện mới vào trang Profile để tiếp tục đặt chỗ.
                 </p>
               )}
             </div>
 
             <div className="mb-4">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Thời gian vào dự kiến</label>
-              <p className="text-amber-400 text-xs mb-2">
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Thời gian vào dự kiến</label>
+              <p className="text-amber-700 text-xs mb-2">
                 Đặt trước tối thiểu 2 giờ, tối đa 3 ngày. {CANCEL_POLICY_SUMMARY}
               </p>
               <DateTimeInput24
@@ -455,7 +455,7 @@ export default function FindSlot() {
             </div>
 
             <div className="mb-6">
-              <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Thời gian ra dự kiến</label>
+              <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Thời gian ra dự kiến</label>
               <DateTimeInput24
                 value={expectedCheckoutTime}
                 min={reservationTime}
@@ -467,7 +467,7 @@ export default function FindSlot() {
             <div className="flex gap-3">
               <button 
                 onClick={() => setShowBookingModal(false)}
-                className="flex-1 px-4 py-3 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition-all text-sm active:scale-95"
+                className="flex-1 px-4 py-3 bg-slate-100 hover:bg-slate-200 text-ink-muted font-bold rounded-xl transition-all text-sm active:scale-95"
               >
                 Hủy bỏ
               </button>

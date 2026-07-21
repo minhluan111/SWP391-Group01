@@ -574,7 +574,7 @@ const getDailyLog = async (req, res) => {
             request.input('query', sql.VarChar, `%${query}%`);
         }
 
-        dataQuery += ' ORDER BY ps.check_in_time DESC';
+        dataQuery += ' ORDER BY ps.id DESC';
 
         const result = await request.query(dataQuery);
 

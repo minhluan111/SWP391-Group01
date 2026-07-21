@@ -99,16 +99,16 @@ export default function QrScannerPanel({ onScan, className = '' }: QrScannerPane
   }, []);
 
   return (
-    <div className={`rounded-xl border border-slate-800 bg-slate-950/60 p-4 ${className}`}>
+    <div className={`rounded-xl border border-slate-200 bg-slate-50 p-4 ${className}`}>
       <div className="flex items-center justify-between gap-3 mb-3">
-        <p className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Quét mã QR</p>
+        <p className="text-xs font-semibold text-ink-muted uppercase tracking-wider">Quét mã QR</p>
         <button
           type="button"
           onClick={() => (active ? void stopScanner() : void startScanner())}
           className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-bold border transition-colors ${
             active
-              ? 'border-rose-500/40 bg-rose-500/10 text-rose-400 hover:bg-rose-500/20'
-              : 'border-primary-500/40 bg-primary-500/10 text-primary-300 hover:bg-primary-500/20'
+              ? 'border-rose-500/40 bg-rose-500/10 text-rose-600 hover:bg-rose-500/20'
+              : 'border-primary-500/40 bg-primary-500/10 text-primary-500 hover:bg-primary-500/20'
           }`}
         >
           {active ? <CameraOff className="w-3.5 h-3.5" /> : <Camera className="w-3.5 h-3.5" />}
@@ -122,10 +122,10 @@ export default function QrScannerPanel({ onScan, className = '' }: QrScannerPane
 
         {!active && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 px-4 pointer-events-none">
-            <p className="text-xs text-slate-400 text-center">
-              Bật camera → đưa <strong className="text-slate-300">màn hình điện thoại</strong> (mã QR) vào trước webcam laptop, cách khoảng 15–25 cm.
+            <p className="text-xs text-slate-300 text-center">
+              Bật camera → đưa <strong className="text-white">màn hình điện thoại</strong> (mã QR) vào trước webcam laptop, cách khoảng 15–25 cm.
             </p>
-            <p className="text-[10px] text-slate-500 text-center">
+            <p className="text-[10px] text-slate-400 text-center">
               Tăng độ sáng màn hình điện thoại, giữ yên 1–2 giây để quét.
             </p>
           </div>
@@ -133,9 +133,9 @@ export default function QrScannerPanel({ onScan, className = '' }: QrScannerPane
       </div>
 
       {active && (
-        <p className="text-xs text-emerald-400 mt-2">Camera đang bật — căn mã QR vào khung vuông giữa hình.</p>
+        <p className="text-xs text-emerald-600 mt-2">Camera đang bật — căn mã QR vào khung vuông giữa hình.</p>
       )}
-      {error && <p className="text-xs text-rose-400 mt-2">{error}</p>}
+      {error && <p className="text-xs text-rose-600 mt-2">{error}</p>}
     </div>
   );
 }

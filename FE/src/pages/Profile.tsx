@@ -294,22 +294,22 @@ export default function Profile() {
   const filterChipClass = (active: boolean) =>
     `px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
       active
-        ? 'border-primary-500 bg-primary-500/15 text-primary-300'
-        : 'border-slate-700 bg-slate-950 text-slate-400 hover:text-slate-200 hover:border-slate-600'
+        ? 'border-primary-500 bg-primary-500 text-white shadow-sm shadow-primary-500/25'
+        : 'border-slate-200 bg-white text-ink-muted hover:text-primary-600 hover:border-primary-300'
     }`;
 
   if (!user) {
-    return <div className="text-center py-20 bg-slate-950 text-white min-h-screen">Vui lòng đăng nhập để xem hồ sơ.</div>;
+    return <div className="text-center py-20 bg-surface text-ink min-h-screen">Vui lòng đăng nhập để xem hồ sơ.</div>;
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10 font-sans">
+    <div className="min-h-screen bg-surface text-ink p-6 md:p-10 font-sans">
       <ReservationTicketModal
         reservation={selectedTicket}
         onClose={() => setSelectedTicket(null)}
         onCancelled={fetchReservations}
       />
-      <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 mb-8 flex items-center gap-2">
+      <h1 className="text-3xl font-extrabold tracking-wide text-brand-navy mb-8 flex items-center gap-2">
         <User className="text-primary-500 w-8 h-8" />
         Hồ sơ cá nhân
       </h1>
@@ -320,27 +320,28 @@ export default function Profile() {
         <div className="lg:col-span-1 space-y-8">
           
           {/* Profile Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden relative shadow-lg">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden relative shadow-sm">
+            <div className="h-2 bg-gradient-to-r from-[#003366] to-primary-500" />
             {!editProfileMode && (
               <button 
                 onClick={openEditProfile}
-                className="absolute top-4 right-4 text-slate-400 hover:text-white transition-colors bg-slate-950/60 p-2 rounded-xl border border-slate-850"
+                className="absolute top-4 right-4 text-ink-muted hover:text-primary-500 transition-colors bg-white p-2 rounded-xl border border-slate-200 shadow-sm z-10"
               >
                 <Edit2 className="w-4 h-4" />
               </button>
             )}
             
-            <div className="bg-slate-950 px-6 py-8 flex flex-col items-center justify-center text-center border-b border-slate-850">
-              <div className="w-20 h-20 bg-primary-600 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-primary-500/25 mb-4 border border-primary-400/20">
+            <div className="bg-gradient-to-b from-primary-50 to-white px-6 py-8 flex flex-col items-center justify-center text-center border-b border-slate-200">
+              <div className="w-20 h-20 bg-primary-500 rounded-full flex items-center justify-center text-3xl font-black text-white shadow-xl shadow-primary-500/30 mb-4 border-4 border-white">
                 {user.full_name.charAt(0).toUpperCase()}
               </div>
               <div>
-                <h2 className="text-xl font-bold text-slate-100">{user.full_name}</h2>
-                <div className="flex items-center justify-center gap-1.5 text-slate-400 mt-1.5 text-sm">
+                <h2 className="text-xl font-bold text-brand-navy">{user.full_name}</h2>
+                <div className="flex items-center justify-center gap-1.5 text-ink-muted mt-1.5 text-sm">
                   <Mail className="w-3.5 h-3.5" />
                   <span>{user.email}</span>
                 </div>
-                <div className="inline-block mt-3 px-3 py-1 rounded-full bg-primary-500/10 text-primary-400 text-xs font-semibold uppercase tracking-wider border border-primary-500/20">
+                <div className="inline-block mt-3 px-3 py-1 rounded-full bg-primary-500 text-white text-xs font-semibold uppercase tracking-wider shadow-sm">
                   {user.role === 'Admin' ? 'Quản trị viên' : user.role === 'Manager' ? 'Quản lý' : user.role === 'Staff' ? 'Nhân viên' : 'Khách hàng'}
                 </div>
               </div>
@@ -350,22 +351,22 @@ export default function Profile() {
               {editProfileMode ? (
                 <form className="space-y-4" onSubmit={profileForm.handleSubmit(onSaveProfile)} noValidate>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Họ và tên</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-1.5">Họ và tên</label>
                     <input
                       type="text"
-                      className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                        profileForm.formState.errors.full_name ? 'border-red-400' : 'border-slate-800'
+                      className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                        profileForm.formState.errors.full_name ? 'border-red-400' : 'border-slate-200'
                       }`}
                       {...profileForm.register('full_name')}
                     />
                     <FormFieldError message={profileForm.formState.errors.full_name?.message} />
                   </div>
                   <div>
-                    <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Số điện thoại</label>
+                    <label className="block text-xs font-semibold text-ink-muted uppercase mb-1.5">Số điện thoại</label>
                     <input
                       type="text"
-                      className={`w-full px-3 py-2 bg-slate-950 border rounded-lg text-sm text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-                        profileForm.formState.errors.phone ? 'border-red-400' : 'border-slate-800'
+                      className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+                        profileForm.formState.errors.phone ? 'border-red-400' : 'border-slate-200'
                       }`}
                       {...profileForm.register('phone')}
                     />
@@ -387,30 +388,30 @@ export default function Profile() {
                           profileForm.reset({ full_name: user.full_name, phone: user.phone || '' });
                         }
                       }}
-                      className="flex-1 bg-slate-800 hover:bg-slate-700 text-slate-300 py-2 rounded-lg text-sm font-bold transition-all"
+                      className="flex-1 bg-slate-100 hover:bg-slate-200 text-ink-muted py-2 rounded-lg text-sm font-bold transition-all"
                     >
                       Hủy
                     </button>
                   </div>
                 </form>
               ) : (
-                <div className="space-y-4 text-sm text-slate-300">
+                <div className="space-y-4 text-sm text-ink">
                   <div className="flex items-center gap-3">
-                    <User className="w-4 h-4 text-slate-500" /> 
+                    <User className="w-4 h-4 text-ink-muted" /> 
                     <span className="font-semibold">{user.full_name}</span>
                   </div>
                   <div className="flex items-center gap-3">
-                    <Phone className="w-4 h-4 text-slate-500" /> 
+                    <Phone className="w-4 h-4 text-ink-muted" /> 
                     <span>{user.phone || 'Chưa cập nhật SĐT'}</span>
                   </div>
                   <div className="flex items-center gap-3">
                     <Shield className="w-4 h-4 text-emerald-500" /> 
-                    <span className="text-emerald-400 font-semibold">Tài khoản bảo mật</span>
+                    <span className="text-emerald-600 font-semibold">Tài khoản bảo mật</span>
                   </div>
 
                   {/* Role Specific Actions List */}
-                  <div className="mt-6 pt-6 border-t border-slate-800/60 space-y-3.5 text-left">
-                    <p className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">Quyền hạn & Chức năng</p>
+                  <div className="mt-6 pt-6 border-t border-slate-200 space-y-3.5 text-left">
+                    <p className="text-[10px] text-ink-muted font-bold uppercase tracking-wider">Quyền hạn & Chức năng</p>
                     <ul className="space-y-2.5">
                       {user.role === 'Customer' && (
                         <>
@@ -491,7 +492,7 @@ export default function Profile() {
                       <div className="pt-3">
                         <Link 
                           to={user.role === 'Admin' ? '/admin' : user.role === 'Manager' ? '/manager' : '/staff'}
-                          className="w-full inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2  rounded-xl text-xs font-bold transition-all text-center shadow-md shadow-primary-500/10 active:scale-95"
+                          className="w-full inline-flex items-center justify-center gap-2 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-xl text-xs font-bold transition-all text-center shadow-md shadow-primary-500/10 active:scale-95"
                         >
                           <LayoutDashboard className="w-3.5 h-3.5" /> 
                           Đi đến Dashboard {user.role === 'Admin' ? 'Admin' : user.role === 'Manager' ? 'Quản lý' : 'Nhân viên'}
@@ -505,13 +506,13 @@ export default function Profile() {
           </div>
 
           {/* Change Password Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
-            <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2 mb-4">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+            <h3 className="text-lg font-bold text-ink flex items-center gap-2 mb-4">
               <Lock className="w-5 h-5 text-primary-500" /> Đổi mật khẩu
             </h3>
             <form onSubmit={passwordForm.handleSubmit(onChangePassword)} className="space-y-4" noValidate>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu cũ</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-1.5">Mật khẩu cũ</label>
                 <PasswordInput
                   placeholder="Nhập mật khẩu hiện tại"
                   hasError={!!passwordForm.formState.errors.old_password}
@@ -520,7 +521,7 @@ export default function Profile() {
                 <FormFieldError message={passwordForm.formState.errors.old_password?.message} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Mật khẩu mới</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-1.5">Mật khẩu mới</label>
                 <PasswordInput
                   placeholder="Nhập mật khẩu mới"
                   hasError={!!passwordForm.formState.errors.new_password}
@@ -530,7 +531,7 @@ export default function Profile() {
                 <FormFieldError message={passwordForm.formState.errors.new_password?.message} />
               </div>
               <div>
-                <label className="block text-xs font-semibold text-slate-400 uppercase mb-1.5">Xác nhận mật khẩu mới</label>
+                <label className="block text-xs font-semibold text-ink-muted uppercase mb-1.5">Xác nhận mật khẩu mới</label>
                 <PasswordInput
                   placeholder="Nhập lại mật khẩu mới"
                   hasError={!!passwordForm.formState.errors.confirm_new_password}
@@ -550,15 +551,15 @@ export default function Profile() {
           </div>
 
           {/* Vehicles Card */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+          <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-ink flex items-center gap-2">
                 <VehiclesSectionIcon /> Phương tiện đỗ
               </h3>
               {!showAddVehicle && (
                 <button 
                   onClick={() => setShowAddVehicle(true)}
-                  className="text-xs text-primary-400 font-bold hover:text-primary-300 flex items-center gap-1"
+                  className="text-xs text-primary-500 font-bold hover:text-primary-600 flex items-center gap-1"
                 >
                   <Plus className="w-3.5 h-3.5" /> Đăng ký xe
                 </button>
@@ -566,13 +567,13 @@ export default function Profile() {
             </div>
 
             {showAddVehicle && (
-              <form onSubmit={vehicleForm.handleSubmit(onAddVehicle)} className="mb-4 p-4 bg-slate-950 border border-slate-850 rounded-xl space-y-3.5" noValidate>
+              <form onSubmit={vehicleForm.handleSubmit(onAddVehicle)} className="mb-4 p-4 bg-surface border border-slate-200 rounded-xl space-y-3.5" noValidate>
                 <div>
                   <input
                     type="text"
                     placeholder="Biển số (VD: 29A-123.45)"
-                    className={`w-full px-3 py-2 bg-slate-900 border rounded-lg text-sm text-white focus:outline-none ${
-                      vehicleForm.formState.errors.license_plate ? 'border-red-400' : 'border-slate-850'
+                    className={`w-full px-3 py-2 bg-white border rounded-lg text-sm text-ink focus:outline-none ${
+                      vehicleForm.formState.errors.license_plate ? 'border-red-400' : 'border-slate-200'
                     }`}
                     {...vehicleForm.register('license_plate')}
                   />
@@ -583,7 +584,7 @@ export default function Profile() {
                     <input
                       type="radio"
                       value="car"
-                      className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0"
+                      className="text-primary-600 bg-white border-slate-200 focus:ring-0"
                       {...vehicleForm.register('vehicle_type')}
                     /> 🚗 Ô tô
                   </label>
@@ -591,26 +592,26 @@ export default function Profile() {
                     <input
                       type="radio"
                       value="motorbike"
-                      className="text-primary-600 bg-slate-900 border-slate-850 focus:ring-0"
+                      className="text-primary-600 bg-white border-slate-200 focus:ring-0"
                       {...vehicleForm.register('vehicle_type')}
                     /> 🏍️ Xe máy
                   </label>
                 </div>
                 <div className="flex gap-2">
                   <button type="submit" disabled={vehicleForm.formState.isSubmitting} className="flex-1 bg-primary-600 hover:bg-primary-700 text-white py-2 rounded-lg text-xs font-bold transition-all disabled:opacity-50">Lưu lại</button>
-                  <button type="button" onClick={() => { setShowAddVehicle(false); vehicleForm.reset(); }} className="flex-1 bg-slate-800 text-slate-400 py-2 rounded-lg text-xs font-bold transition-all">Hủy</button>
+                  <button type="button" onClick={() => { setShowAddVehicle(false); vehicleForm.reset(); }} className="flex-1 bg-slate-100 hover:bg-slate-200 text-ink-muted py-2 rounded-lg text-xs font-bold transition-all">Hủy</button>
                 </div>
               </form>
             )}
             
             {loadingVehicles ? (
-              <p className="text-slate-500 text-sm">Đang tải danh sách...</p>
+              <p className="text-ink-muted text-sm">Đang tải danh sách...</p>
             ) : vehicles.length === 0 ? (
-              <p className="text-slate-500 text-sm text-center py-4">Chưa có phương tiện đăng ký.</p>
+              <p className="text-ink-muted text-sm text-center py-4">Chưa có phương tiện đăng ký.</p>
             ) : (
               <ul className="space-y-3">
                 {vehicles.map((v) => (
-                  <li key={v.id} className="p-3.5 rounded-xl border border-slate-850 bg-slate-950/60">
+                  <li key={v.id} className="p-3.5 rounded-xl border border-slate-200 bg-surface">
                     {editingVehicleId === v.id ? (
                       <div className="space-y-3">
                         <input
@@ -620,8 +621,8 @@ export default function Profile() {
                             setEditPlate(e.target.value);
                             setEditPlateError('');
                           }}
-                          className={`w-full px-3 py-1.5 bg-slate-900 border rounded-lg text-sm text-white focus:outline-none ${
-                            editPlateError ? 'border-red-400' : 'border-slate-800'
+                          className={`w-full px-3 py-1.5 bg-white border rounded-lg text-sm text-ink focus:outline-none ${
+                            editPlateError ? 'border-red-400' : 'border-slate-200'
                           }`}
                         />
                         <FormFieldError message={editPlateError} />
@@ -633,9 +634,9 @@ export default function Profile() {
                             <input type="radio" name={`edit_type_${v.id}`} value="motorbike" checked={editVehicleType === 'motorbike'} onChange={(e) => setEditVehicleType(e.target.value)} className="text-primary-600" /> Xe máy
                           </label>
                         </div>
-                        <div className="flex justify-end gap-2 mt-2 border-t border-slate-800 pt-2">
-                          <button onClick={() => setEditingVehicleId(null)} className="p-1 text-slate-500 hover:text-slate-300"><X className="w-4 h-4" /></button>
-                          <button onClick={() => handleSaveVehicle(v.id)} className="p-1 text-green-500 hover:text-green-400"><Check className="w-4 h-4" /></button>
+                        <div className="flex justify-end gap-2 mt-2 border-t border-slate-200 pt-2">
+                          <button onClick={() => setEditingVehicleId(null)} className="p-1 text-ink-muted hover:text-ink"><X className="w-4 h-4" /></button>
+                          <button onClick={() => handleSaveVehicle(v.id)} className="p-1 text-green-600 hover:text-green-700"><Check className="w-4 h-4" /></button>
                         </div>
                       </div>
                     ) : (
@@ -643,15 +644,15 @@ export default function Profile() {
                         <div className="flex items-center gap-3">
                           <VehicleTypeIcon vehicleType={v.vehicle_type} />
                           <div>
-                            <p className="font-bold text-slate-100 text-sm font-mono">{v.license_plate}</p>
-                            <p className="text-xs text-slate-400 capitalize">{v.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</p>
+                            <p className="font-bold text-ink text-sm font-mono">{v.license_plate}</p>
+                            <p className="text-xs text-ink-muted capitalize">{v.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</p>
                           </div>
                         </div>
                         <div className="flex items-center gap-1.5">
-                          <button onClick={() => handleEditVehicle(v)} className="text-slate-500 hover:text-primary-400 p-1" title="Sửa thông tin">
+                          <button onClick={() => handleEditVehicle(v)} className="text-ink-muted hover:text-primary-500 p-1" title="Sửa thông tin">
                             <Edit2 className="w-4 h-4" />
                           </button>
-                          <button onClick={() => handleDeleteVehicle(v.id)} className="text-slate-500 hover:text-rose-500 p-1" title="Xóa xe">
+                          <button onClick={() => handleDeleteVehicle(v.id)} className="text-ink-muted hover:text-rose-500 p-1" title="Xóa xe">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>
@@ -668,16 +669,18 @@ export default function Profile() {
         <div className="lg:col-span-2 space-y-6">
 
           {/* History Reservations Table */}
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-lg">
+          <div className="bg-white border border-slate-200 rounded-2xl overflow-hidden shadow-sm">
+            <div className="h-1.5 bg-gradient-to-r from-[#003366] to-primary-500" />
+            <div className="p-6">
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-              <h3 className="text-lg font-bold text-slate-200 flex items-center gap-2">
+              <h3 className="text-lg font-bold text-brand-navy flex items-center gap-2">
                 <Calendar className="w-5 h-5 text-primary-500" /> Nhật ký đặt chỗ
               </h3>
               {hasActiveFilters && (
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-slate-400 hover:text-primary-300 transition-colors"
+                  className="inline-flex items-center gap-1.5 text-xs font-semibold text-ink-muted hover:text-primary-500 transition-colors"
                 >
                   <RotateCcw className="w-3.5 h-3.5" /> Xóa bộ lọc
                 </button>
@@ -685,18 +688,18 @@ export default function Profile() {
             </div>
 
             {bannerContent && (
-              <div className="reservation-banner mb-5 flex items-start gap-3 p-4 pl-5 rounded-xl text-base text-primary-50">
-                <QrCode className="w-6 h-6 flex-shrink-0 mt-0.5 text-primary-300 animate-pulse" />
+              <div className="reservation-banner mb-5 flex items-start gap-3 p-4 pl-5 rounded-xl text-base text-primary-700">
+                <QrCode className="w-6 h-6 flex-shrink-0 mt-0.5 text-primary-500 animate-pulse" />
                 <p className="leading-relaxed">
                   Bạn có{' '}
                   {bannerContent.bookingPhrase && (
-                    <strong className="text-white font-bold">{bannerContent.bookingPhrase}</strong>
+                    <strong className="text-primary-800 font-bold">{bannerContent.bookingPhrase}</strong>
                   )}
                   {bannerContent.bookingPhrase && bannerContent.inLotPhrase && ' và '}
                   {bannerContent.inLotPhrase && (
-                    <strong className="text-white font-bold">{bannerContent.inLotPhrase}</strong>
+                    <strong className="text-primary-800 font-bold">{bannerContent.inLotPhrase}</strong>
                   )}
-                  <span className="block mt-1 text-sm text-primary-200/90">
+                  <span className="block mt-1 text-sm text-primary-600/90">
                     — {RESERVATION_BANNER_SUFFIX}
                   </span>
                 </p>
@@ -706,18 +709,18 @@ export default function Profile() {
             {/* Filters */}
             <div className="space-y-4 mb-6">
               <div className="relative">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500" />
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-muted" />
                 <input
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder="Tìm mã vé, vị trí, biển số..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-sm text-white placeholder:text-slate-500 focus:outline-none focus:ring-1 focus:ring-primary-500"
+                  className="w-full pl-10 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm text-ink placeholder:text-ink-muted focus:outline-none focus:ring-1 focus:ring-primary-500"
                 />
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Loại xe</span>
+                <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Loại xe</span>
                 {([
                   ['all', 'Tất cả'],
                   ['motorbike', 'Xe máy'],
@@ -735,7 +738,7 @@ export default function Profile() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Trạng thái</span>
+                <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Trạng thái</span>
                 {([
                   ['all', 'Tất cả'],
                   ['pending', 'Đang chờ'],
@@ -755,7 +758,7 @@ export default function Profile() {
               </div>
 
               <div className="flex flex-wrap gap-2">
-                <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Thời gian</span>
+                <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Thời gian</span>
                 {([
                   ['all', 'Tất cả'],
                   ['7d', '7 ngày'],
@@ -774,39 +777,39 @@ export default function Profile() {
             </div>
 
             {loadingReservations ? (
-              <div className="text-center py-12 text-slate-500">Đang tải lịch sử gửi xe...</div>
+              <div className="text-center py-12 text-ink-muted">Đang tải lịch sử gửi xe...</div>
             ) : reservations.length === 0 ? (
-              <div className="text-center py-16 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
-                <Clock className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 font-medium">Chưa có lịch sử gửi xe.</p>
+              <div className="text-center py-16 bg-surface rounded-xl border border-dashed border-slate-200">
+                <Clock className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-ink-muted font-medium">Chưa có lịch sử gửi xe.</p>
               </div>
             ) : filteredReservations.length === 0 ? (
-              <div className="text-center py-16 bg-slate-950/40 rounded-xl border border-dashed border-slate-800">
-                <Search className="w-12 h-12 text-slate-600 mx-auto mb-3" />
-                <p className="text-slate-400 font-medium">Không tìm thấy lượt gửi xe phù hợp bộ lọc.</p>
+              <div className="text-center py-16 bg-surface rounded-xl border border-dashed border-slate-200">
+                <Search className="w-12 h-12 text-slate-300 mx-auto mb-3" />
+                <p className="text-ink-muted font-medium">Không tìm thấy lượt gửi xe phù hợp bộ lọc.</p>
                 <button
                   type="button"
                   onClick={clearFilters}
-                  className="mt-3 text-sm text-primary-400 hover:text-primary-300 font-semibold"
+                  className="mt-3 text-sm text-primary-500 hover:text-primary-600 font-semibold"
                 >
                   Xóa bộ lọc
                 </button>
               </div>
             ) : (
               <div className="overflow-x-auto">
-                <p className="text-xs text-slate-500 mb-3">
-                  <span className="text-slate-400">Trang {reservationPagination.page}</span>
+                <p className="text-xs text-ink-muted mb-3">
+                  <span className="text-ink-muted">Trang {reservationPagination.page}</span>
                   {' · '}
-                  <span className="text-slate-200 font-medium">
+                  <span className="text-ink font-medium">
                     {reservationPagination.rangeStart}–{reservationPagination.rangeEnd}
                   </span>
                   {' / '}
-                  <span className="text-slate-200 font-medium">{reservationPagination.total}</span>
+                  <span className="text-ink font-medium">{reservationPagination.total}</span>
                   {' lượt gửi xe'}
                 </p>
                 <table className="w-full text-left border-collapse text-sm">
                   <thead>
-                    <tr className="border-b border-slate-800 text-slate-400 text-xs uppercase font-semibold">
+                    <tr className="border-b border-slate-200 text-ink-muted text-xs uppercase font-semibold">
                       <th className="pb-3 font-semibold">Mã vé đỗ</th>
                       <th className="pb-3 font-semibold">Vị trí</th>
                       <th className="pb-3 font-semibold">Thông tin xe</th>
@@ -815,13 +818,13 @@ export default function Profile() {
                       <th className="pb-3 font-semibold">Trạng thái</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-850">
+                  <tbody className="divide-y divide-slate-200">
                     {reservationPagination.items.map((res) => {
                       const showQr = shouldShowTicketQr(res);
                       const ticketGlassClass = getTicketGlassClass(res);
                       const TicketIcon = showQr ? QrCode : Ticket;
                       return (
-                        <tr key={res.id} className="hover:bg-slate-800/10 transition-colors">
+                        <tr key={res.id} className="hover:bg-slate-50 transition-colors">
                           <td className="py-4 font-mono">
                             <button
                               type="button"
@@ -834,26 +837,26 @@ export default function Profile() {
                             </button>
                           </td>
                           <td className="py-4">
-                            <span className="bg-slate-800 text-slate-300 border border-slate-700 px-2.5 py-1 rounded-lg font-bold font-mono">
+                            <span className="bg-slate-100 text-ink border border-slate-200 px-2.5 py-1 rounded-lg font-bold font-mono">
                               {res.slot_code}
                             </span>
                           </td>
                           <td className="py-4">
-                            <span className="font-bold text-slate-100 block font-mono">{res.license_plate}</span>
-                            <span className="text-xs text-slate-400 capitalize">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
+                            <span className="font-bold text-ink block font-mono">{res.license_plate}</span>
+                            <span className="text-xs text-ink-muted capitalize">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
                           </td>
-                          <td className="py-4 text-xs text-slate-300 space-y-1">
+                          <td className="py-4 text-xs text-ink-muted space-y-1">
                             {res.is_walkin_history ? (
                               <>
                                 {res.check_in_time && (
-                                  <div className="text-blue-400">
-                                    <span className="text-slate-500">Vào bãi: </span>
+                                  <div className="text-blue-600">
+                                    <span className="text-ink-muted">Vào bãi: </span>
                                     {formatDateTime24(res.check_in_time)}
                                   </div>
                                 )}
                                 {res.check_out_time && (
-                                  <div className="text-emerald-400">
-                                    <span className="text-slate-500">Ra bãi: </span>
+                                  <div className="text-emerald-600">
+                                    <span className="text-ink-muted">Ra bãi: </span>
                                     {formatDateTime24(res.check_out_time)}
                                   </div>
                                 )}
@@ -861,45 +864,45 @@ export default function Profile() {
                             ) : (
                               <>
                             <div>
-                              <span className="text-slate-500">Đặt: </span>
+                              <span className="text-ink-muted">Đặt: </span>
                               {formatDateTime24(res.reservation_time)}
                             </div>
                             {res.expected_checkout_time && (
                               <div>
-                                <span className="text-slate-500">Dự kiến ra: </span>
+                                <span className="text-ink-muted">Dự kiến ra: </span>
                                 {formatDateTime24(res.expected_checkout_time)}
                               </div>
                             )}
                             {res.check_in_time && (
-                              <div className="text-blue-400">
-                                <span className="text-slate-500">Vào bãi: </span>
+                              <div className="text-blue-600">
+                                <span className="text-ink-muted">Vào bãi: </span>
                                 {formatDateTime24(res.check_in_time)}
                               </div>
                             )}
                             {res.check_out_time && (
-                              <div className="text-emerald-400">
-                                <span className="text-slate-500">Ra bãi: </span>
+                              <div className="text-emerald-600">
+                                <span className="text-ink-muted">Ra bãi: </span>
                                 {formatDateTime24(res.check_out_time)}
                               </div>
                             )}
                               </>
                             )}
                           </td>
-                          <td className="py-4 text-xs text-slate-300">
+                          <td className="py-4 text-xs text-ink-muted">
                             {res.total_amount !== undefined && res.total_amount !== null ? (
                               <div className="space-y-1">
-                                <div className="font-bold text-amber-300 text-base">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
-                                <div className="text-[9px] text-slate-400 flex items-center gap-1.5 mt-0.5">
-                                  <span className="bg-slate-800 px-1.5 py-0.5 rounded border border-slate-700 uppercase font-semibold">
+                                <div className="font-bold text-amber-600 text-base">{Number(res.total_amount).toLocaleString('vi-VN')}đ</div>
+                                <div className="text-[9px] text-ink-muted flex items-center gap-1.5 mt-0.5">
+                                  <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 uppercase font-semibold text-ink">
                                     {res.payment_method === 'cash' ? 'Tiền mặt' : 'Online'}
                                   </span>
-                                  <span className={`px-1.5 py-0.5 rounded font-semibold ${res.payment_status === 'paid' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-yellow-500/10 text-yellow-500 border border-yellow-500/20'}`}>
+                                  <span className={`px-1.5 py-0.5 rounded font-semibold ${res.payment_status === 'paid' ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-yellow-50 text-yellow-700 border border-yellow-200'}`}>
                                     {res.payment_status === 'paid' ? 'Đã trả' : 'Chưa trả'}
                                   </span>
                                 </div>
                               </div>
                             ) : (
-                              <span className="text-slate-500">—</span>
+                              <span className="text-ink-muted">—</span>
                             )}
                           </td>
                           <td className="py-4">
@@ -919,6 +922,7 @@ export default function Profile() {
                 />
               </div>
             )}
+            </div>
           </div>
 
         </div>

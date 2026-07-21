@@ -89,7 +89,7 @@ const getMyReservations = async (req, res) => {
             .input('user_id', sql.Int, req.user.id)
             .query(`
                 SELECT r.id, r.reservation_code, r.reservation_time, r.expected_checkout_time, r.status, 
-                       r.vehicle_id,
+                       r.vehicle_id, r.created_at,
                        v.license_plate, v.vehicle_type, s.slot_code,
                        ps.ticket_code, ps.check_in_time, ps.check_out_time, ps.total_amount,
                        p.payment_status, p.payment_method,
@@ -111,6 +111,7 @@ const getMyReservations = async (req, res) => {
                            ps.check_out_time as expected_checkout_time,
                            CASE WHEN ps.status = 'active' THEN 'checked_in' ELSE 'completed' END as status,
                            v.id as vehicle_id,
+                           ps.created_at,
                            v.license_plate, v.vehicle_type, s.slot_code,
                            ps.ticket_code, ps.check_in_time, ps.check_out_time, ps.total_amount,
                            p.payment_status, p.payment_method,
@@ -126,9 +127,10 @@ const getMyReservations = async (req, res) => {
         }
 
         const combined = [...result.recordset, ...walkInRows].sort((a, b) => {
-            const ta = new Date(a.check_in_time || a.reservation_time).getTime();
-            const tb = new Date(b.check_in_time || b.reservation_time).getTime();
-            return tb - ta;
+            const ta = new Date(a.created_at || a.check_in_time || a.reservation_time).getTime();
+            const tb = new Date(b.created_at || b.check_in_time || b.reservation_time).getTime();
+            if (tb !== ta) return tb - ta;
+            return (b.id || 0) - (a.id || 0);
         });
 
         res.json({ success: true, data: combined });

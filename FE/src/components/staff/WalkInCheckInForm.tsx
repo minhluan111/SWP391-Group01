@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { Upload, Ticket } from 'lucide-react';
+import { Ticket } from 'lucide-react';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import DateTimeInput24 from '../ui/DateTimeInput24';
@@ -53,8 +53,6 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
   const [floor, setFloor] = useState('');
   const [slotDbId, setSlotDbId] = useState('');
   const [checkInTime, setCheckInTime] = useState(getNowDatetimeLocal());
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
-  const [photoPreview, setPhotoPreview] = useState<string | null>(null);
 
   useEffect(() => {
     api.get('/slots')
@@ -124,17 +122,6 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
     return validatePlateField();
   };
 
-  const onPhotoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('Chỉ chấp nhận file ảnh');
-      return;
-    }
-    setPhotoFile(file);
-    setPhotoPreview(URL.createObjectURL(file));
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -168,7 +155,6 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
       form.append('slot_id', slotDbId);
       form.append('check_in_time', datetimeLocalToIso(timeToUse));
       if (guestPhone.trim()) form.append('guest_phone', guestPhone.trim());
-      if (photoFile) form.append('vehicle_photo', photoFile);
 
       const token = localStorage.getItem('token');
       const response = await fetch(`${API_ORIGIN}/api/sessions/walk-in-checkin`, {
@@ -187,8 +173,6 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
       setPlateError('');
       setGuestPhone('');
       setPhoneError('');
-      setPhotoFile(null);
-      setPhotoPreview(null);
       setCheckInTime(getNowDatetimeLocal());
       setSlotDbId('');
     } catch (err: unknown) {
@@ -200,31 +184,14 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5" noValidate>
-      <h3 className="font-bold text-slate-200 flex items-center gap-2">
-        <Ticket className="w-5 h-5 text-primary-400" />
+    <form onSubmit={handleSubmit} className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-5" noValidate>
+      <h3 className="font-bold text-ink flex items-center gap-2">
+        <Ticket className="w-5 h-5 text-primary-500" />
         Check-in xe trực tiếp (không đặt chỗ)
       </h3>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Upload ảnh xe
-        </label>
-        <label className="flex flex-col items-center justify-center w-full h-28 border-2 border-dashed border-slate-700 rounded-xl cursor-pointer hover:border-primary-500/50 hover:bg-slate-950/50 transition-colors">
-          <Upload className="w-6 h-6 text-slate-500 mb-1" />
-          <span className="text-xs text-slate-500">Chọn ảnh (JPG, PNG — tối đa 5MB)</span>
-          <input type="file" accept="image/*" className="hidden" onChange={onPhotoChange} />
-        </label>
-        {photoPreview && (
-          <div className="mt-3">
-            <p className="text-[10px] uppercase text-slate-500 font-bold mb-1">Ảnh preview</p>
-            <img src={photoPreview} alt="Xe" className="w-full max-h-40 object-cover rounded-xl border border-slate-800" />
-          </div>
-        )}
-      </div>
-
-      <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Biển số</label>
+        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Biển số</label>
         <input
           type="text"
           value={licensePlate}
@@ -234,16 +201,16 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
           }}
           onBlur={handlePlateBlur}
           placeholder="37A-12345"
-          className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white font-mono focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-            plateError ? 'border-red-400' : 'border-slate-800'
+          className={`w-full px-4 py-3 rounded-xl bg-white border text-ink font-mono focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+            plateError ? 'border-red-400' : 'border-slate-200'
           }`}
         />
         <FormFieldError message={plateError} />
       </div>
 
       <div>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">
-          Số điện thoại <span className="text-slate-600 normal-case">(tùy chọn)</span>
+        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">
+          Số điện thoại <span className="text-ink-muted normal-case">(tùy chọn)</span>
         </label>
         <input
           type="tel"
@@ -254,19 +221,19 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
           }}
           onBlur={handlePhoneBlur}
           placeholder="0912345678"
-          className={`w-full px-4 py-3 rounded-xl bg-slate-950 border text-white focus:outline-none focus:ring-1 focus:ring-primary-500 ${
-            phoneError ? 'border-red-400' : 'border-slate-800'
+          className={`w-full px-4 py-3 rounded-xl bg-white border text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 ${
+            phoneError ? 'border-red-400' : 'border-slate-200'
           }`}
         />
         <FormFieldError message={phoneError} />
-        <p className="text-[11px] text-slate-500 mt-1.5">
+        <p className="text-[11px] text-ink-muted mt-1.5">
           Nếu khách cung cấp SĐT, hệ thống lưu theo vé để liên kết lịch sử khi đăng ký tài khoản sau.
         </p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Loại xe</label>
+          <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Loại xe</label>
           <select
             value={vehicleType}
             onFocus={ensurePlateValidBeforeNextField}
@@ -274,14 +241,14 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
               if (!ensurePlateValidBeforeNextField()) return;
               setVehicleType(e.target.value as 'car' | 'motorbike');
             }}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-primary-500"
+            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-ink focus:outline-none focus:ring-1 focus:ring-primary-500"
           >
             <option value="motorbike">Xe máy</option>
             <option value="car">Ô tô</option>
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tầng</label>
+          <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Tầng</label>
           <select
             value={floor}
             onFocus={ensurePlateValidBeforeNextField}
@@ -290,7 +257,7 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
               setFloor(e.target.value);
             }}
             disabled={loadingSlots || floors.length === 0}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
           >
             {floors.map((f) => (
               <option key={f} value={f}>{f}</option>
@@ -298,7 +265,7 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
           </select>
         </div>
         <div>
-          <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Slot</label>
+          <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Slot</label>
           <select
             value={slotDbId}
             onFocus={ensurePlateValidBeforeNextField}
@@ -307,7 +274,7 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
               setSlotDbId(e.target.value);
             }}
             disabled={availableSlots.length === 0}
-            className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-800 text-white focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
+            className="w-full px-4 py-3 rounded-xl bg-white border border-slate-200 text-ink focus:outline-none focus:ring-1 focus:ring-primary-500 disabled:opacity-50"
           >
             <option value="">-- Chọn ô trống --</option>
             {availableSlots.map((s) => (
@@ -318,14 +285,14 @@ export default function WalkInCheckInForm({ onTicketCreated }: WalkInCheckInForm
       </div>
 
       <div onFocusCapture={ensurePlateValidBeforeNextField}>
-        <label className="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ngày giờ vào</label>
+        <label className="block text-xs font-semibold text-ink-muted uppercase tracking-wider mb-2">Ngày giờ vào</label>
         <DateTimeInput24
           value={checkInTime}
           onChange={setCheckInTime}
           min={getWalkInTimeMin()}
           max={getWalkInTimeMax()}
         />
-        <p className="text-[11px] text-slate-500 mt-1.5">
+        <p className="text-[11px] text-ink-muted mt-1.5">
           Quá khứ quá 5 phút sẽ tự đổi sang giờ hiện tại khi tạo vé. Tương lai tối đa 24 giờ (phù hợp demo).
         </p>
       </div>

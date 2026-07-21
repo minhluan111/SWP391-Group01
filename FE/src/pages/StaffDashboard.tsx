@@ -146,8 +146,8 @@ export default function StaffDashboard() {
   const logChipClass = (active: boolean) =>
     `px-3 py-1.5 rounded-lg text-xs font-semibold border transition-colors ${
       active
-        ? 'bg-primary-500/15 text-primary-300 border-primary-500/40'
-        : 'bg-slate-900 text-slate-400 border-slate-800 hover:border-slate-700'
+        ? 'bg-primary-500/15 text-primary-500 border-primary-500/40'
+        : 'bg-white text-ink-muted border-slate-200 hover:border-slate-300'
     }`;
 
   const handleSearch = async (e?: React.FormEvent) => {
@@ -276,17 +276,17 @@ export default function StaffDashboard() {
   const logCounterSuffix = logPreset === 'today' ? ' trong hôm nay' : '';
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white p-6 md:p-10">
+    <div className="min-h-screen bg-surface text-ink p-6 md:p-10">
       <WalkInTicketModal ticket={walkInTicket} onClose={() => setWalkInTicket(null)} />
       
       {/* Header section */}
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
         <div>
-          <h1 className="text-3xl font-extrabold tracking-wide text-slate-100 flex items-center gap-2">
+          <h1 className="text-3xl font-extrabold tracking-wide text-ink flex items-center gap-2">
             <ClipboardList className="text-primary-500 w-8 h-8" />
             Nhân viên Bãi xe Dashboard
           </h1>
-          <p className="text-sm text-slate-400 mt-1">Check-in xe vào, thanh toán check-out xe ra và xem nhật ký hoạt động.</p>
+          <p className="text-sm text-ink-muted mt-1">Check-in xe vào, thanh toán check-out xe ra và xem nhật ký hoạt động.</p>
         </div>
         <div className="flex items-center gap-3">
           <button 
@@ -294,7 +294,7 @@ export default function StaffDashboard() {
               resetWorkspace();
               if (activeTab === 'logs') fetchDailyLogs();
             }} 
-            className="flex items-center gap-1.5 px-4 py-2 border border-slate-700 rounded-xl hover:bg-slate-800 text-slate-300 transition-colors text-sm"
+            className="flex items-center gap-1.5 px-4 py-2 border border-slate-200 rounded-xl hover:bg-slate-100 text-ink-muted transition-colors text-sm"
           >
             <RefreshCw className="w-4 h-4" /> Làm mới
           </button>
@@ -302,22 +302,22 @@ export default function StaffDashboard() {
       </div>
 
       {/* Tabs list */}
-      <div className="flex gap-4 border-b border-slate-800 pb-px mb-8">
+      <div className="flex gap-4 border-b border-slate-200 pb-px mb-8">
         <button 
           onClick={() => setActiveTab('checkin')} 
-          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'checkin' ? 'border-primary-500 text-primary-500' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'checkin' ? 'border-primary-500 text-primary-500' : 'border-transparent text-ink-muted hover:text-ink'}`}
         >
           <LogIn className="w-4 h-4" /> Check-in Xe Vào
         </button>
         <button 
           onClick={() => setActiveTab('checkout')} 
-          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'checkout' ? 'border-primary-500 text-primary-500' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'checkout' ? 'border-primary-500 text-primary-500' : 'border-transparent text-ink-muted hover:text-ink'}`}
         >
           <LogOut className="w-4 h-4" /> Check-out & Tính Phí
         </button>
         <button 
           onClick={() => setActiveTab('logs')} 
-          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'logs' ? 'border-primary-500 text-primary-500' : 'border-transparent text-slate-400 hover:text-slate-200'}`}
+          className={`flex items-center gap-2 pb-4 font-semibold text-sm transition-all border-b-2 px-2 ${activeTab === 'logs' ? 'border-primary-500 text-primary-500' : 'border-transparent text-ink-muted hover:text-ink'}`}
         >
           <FileText className="w-4 h-4" /> Nhật Ký Hoạt Động
         </button>
@@ -330,7 +330,7 @@ export default function StaffDashboard() {
         <div className="lg:col-span-2 space-y-6">
           
           {activeTab !== 'logs' && (activeTab === 'checkout' || checkInMode === 'reservation') && (
-            <div className="glass-morphism border border-slate-800 p-6 rounded-2xl space-y-4">
+            <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-4">
               <h2 className="text-lg font-bold flex items-center gap-2">
                 <Search className="w-5 h-5 text-primary-500" />
                 {activeTab === 'checkin' ? 'Tìm đặt chỗ (RES-...)' : 'Tìm vé ra bãi (TICKET-...)'}
@@ -343,12 +343,12 @@ export default function StaffDashboard() {
                     : "Nhập mã vé (TICKET-...), biển số xe, hoặc ô đỗ..."}
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="flex-1 px-4 py-3 rounded-xl bg-slate-900 border border-slate-800 text-white focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
+                  className="flex-1 px-4 py-3 rounded-xl bg-white border border-slate-200 text-ink focus:outline-none focus:ring-2 focus:ring-primary-500 text-sm"
                 />
                 <button 
                   type="submit" 
                   disabled={loading}
-                  className="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-xl font-bold flex items-center gap-1.5 transition-colors disabled:opacity-50 text-sm"
+                  className="bg-primary-600 hover:bg-primary-700 px-6 py-3 rounded-xl font-bold flex items-center gap-1.5 transition-colors disabled:opacity-50 text-sm text-white"
                 >
                   {loading ? 'Đang tìm...' : 'Tìm vé'}
                 </button>
@@ -382,33 +382,33 @@ export default function StaffDashboard() {
 
           {activeTab === 'checkin' && checkInMode === 'reservation' && (
             <div className="space-y-4">
-              <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Danh sách đặt chỗ chờ vào bãi</h3>
+              <h3 className="font-bold text-ink-muted text-sm uppercase tracking-wider">Danh sách đặt chỗ chờ vào bãi</h3>
               {searchResults.reservations.length === 0 ? (
-                <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-500">
-                  <Car className="w-12 h-12 mx-auto mb-3 text-slate-700" />
+                <div className="p-12 text-center bg-slate-50 border border-slate-200 rounded-2xl text-ink-muted">
+                  <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm">Nhập mã đặt chỗ ở thanh tìm kiếm phía trên để hiển thị thông tin Check-in.</p>
                 </div>
               ) : (
                 searchResults.reservations.map((res) => (
-                  <div key={res.reservation_id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all flex flex-col gap-5">
+                  <div key={res.reservation_id} className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl hover:border-slate-300 transition-all flex flex-col gap-5">
                     <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2.5 mb-2">
-                          <span className="bg-slate-800 text-xs px-2.5 py-1 rounded-full font-mono text-slate-300 font-semibold border border-slate-700">{res.reservation_code}</span>
-                          <span className="bg-yellow-500/10 text-yellow-500 text-[10px] px-2 py-0.5 rounded-full font-bold border border-yellow-500/20 uppercase">Chờ xe vào</span>
+                          <span className="bg-slate-100 text-xs px-2.5 py-1 rounded-full font-mono text-ink-muted font-semibold border border-slate-200">{res.reservation_code}</span>
+                          <span className="bg-yellow-500/10 text-yellow-700 text-[10px] px-2 py-0.5 rounded-full font-bold border border-yellow-500/20 uppercase">Chờ xe vào</span>
                         </div>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-2 mt-4 text-sm">
-                          <div><span className="text-slate-400">Khách hàng:</span> <strong className="text-slate-200">{res.customer_name}</strong></div>
-                          <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{res.customer_phone}</span></div>
-                          <div><span className="text-slate-400">Biển số:</span> <strong className="text-primary-400 font-mono">{res.license_plate}</strong></div>
-                          <div><span className="text-slate-400">Loại xe:</span> <span className="capitalize text-slate-300">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
-                          <div><span className="text-slate-400">Vị trí đỗ:</span> <strong className="text-emerald-400">{res.slot_code}</strong></div>
-                          <div><span className="text-slate-400">Giờ vào dự kiến:</span> <span className="text-slate-300">{formatDateTime24(res.reservation_time)}</span></div>
+                          <div><span className="text-ink-muted">Khách hàng:</span> <strong className="text-ink">{res.customer_name}</strong></div>
+                          <div><span className="text-ink-muted">Số điện thoại:</span> <span className="text-ink-muted">{res.customer_phone}</span></div>
+                          <div><span className="text-ink-muted">Biển số:</span> <strong className="text-primary-500 font-mono">{res.license_plate}</strong></div>
+                          <div><span className="text-ink-muted">Loại xe:</span> <span className="capitalize text-ink-muted">{res.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
+                          <div><span className="text-ink-muted">Vị trí đỗ:</span> <strong className="text-emerald-600">{res.slot_code}</strong></div>
+                          <div><span className="text-ink-muted">Giờ vào dự kiến:</span> <span className="text-ink-muted">{formatDateTime24(res.reservation_time)}</span></div>
                         </div>
                       </div>
 
-                      <div className="w-full lg:w-72 flex-shrink-0 pt-5 lg:pt-1 lg:pl-6 lg:border-l border-slate-800">
-                        <label className="block text-xs uppercase tracking-wider font-bold text-primary-300 mb-3">
+                      <div className="w-full lg:w-72 flex-shrink-0 pt-5 lg:pt-1 lg:pl-6 lg:border-l border-slate-200">
+                        <label className="block text-xs uppercase tracking-wider font-bold text-primary-500 mb-3">
                           Giờ check-in
                         </label>
                         <DateTimeInput24
@@ -418,17 +418,17 @@ export default function StaffDashboard() {
                         <button
                           type="button"
                           onClick={() => useReservationTimeForCheckIn(res.reservation_id, res.reservation_time)}
-                          className="w-full mt-3 text-xs font-semibold text-primary-300 hover:text-primary-200 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/15 rounded-lg py-2 transition-colors"
+                          className="w-full mt-3 text-xs font-semibold text-primary-500 hover:text-primary-600 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg py-2 transition-colors"
                         >
                           Dùng giờ vào dự kiến
                         </button>
-                        <p className="text-amber-400 text-xs leading-relaxed mt-3">
+                        <p className="text-amber-600 text-xs leading-relaxed mt-3">
                           Cho phép sớm/trễ tối đa 15 phút so với giờ vào dự kiến.
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex justify-end pt-1 border-t border-slate-800/80">
+                    <div className="flex justify-end pt-1 border-t border-slate-200">
                     <button 
                       onClick={() => handleCheckIn(res)}
                       className="w-full sm:w-auto bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-6 py-3 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/20 transition-colors text-sm"
@@ -445,13 +445,13 @@ export default function StaffDashboard() {
           {activeTab === 'checkout' && (
             <div className="space-y-4">
               {checkoutPreview ? (
-                <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl space-y-5">
+                <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl space-y-5">
                   <div className="flex items-center justify-between gap-3">
-                    <h3 className="font-bold text-slate-200">Bước 2 — Xác nhận thanh toán</h3>
+                    <h3 className="font-bold text-ink">Bước 2 — Xác nhận thanh toán</h3>
                     <button
                       type="button"
                       onClick={() => setCheckoutPreview(null)}
-                      className="text-xs text-slate-400 hover:text-slate-200"
+                      className="text-xs text-ink-muted hover:text-ink"
                     >
                       ← Quay lại tìm vé
                     </button>
@@ -459,34 +459,34 @@ export default function StaffDashboard() {
 
                   {assetUrl(checkoutPreview.vehicle_photo_url) && (
                     <div>
-                      <p className="text-[10px] uppercase text-slate-500 font-bold mb-2">Ảnh xe</p>
+                      <p className="text-[10px] uppercase text-ink-muted font-bold mb-2">Ảnh xe</p>
                       <img
                         src={assetUrl(checkoutPreview.vehicle_photo_url)!}
                         alt="Xe"
-                        className="w-full max-h-48 object-cover rounded-xl border border-slate-800"
+                        className="w-full max-h-48 object-cover rounded-xl border border-slate-200"
                       />
                     </div>
                   )}
 
                   <div className="grid grid-cols-2 gap-3 text-sm">
-                    <div><span className="text-slate-500">Mã vé:</span> <strong className="font-mono">{checkoutPreview.ticket_code}</strong></div>
-                    <div><span className="text-slate-500">Biển số:</span> <strong className="font-mono text-primary-400">{checkoutPreview.license_plate}</strong></div>
-                    <div><span className="text-slate-500">Loại xe:</span> <span>{checkoutPreview.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
-                    <div><span className="text-slate-500">Vị trí:</span> <strong className="text-yellow-400">{checkoutPreview.slot_code}</strong></div>
-                    <div className="col-span-2"><span className="text-slate-500">Giờ vào:</span> {formatDateTime24(checkoutPreview.check_in_time)}</div>
-                    <div className="col-span-2"><span className="text-slate-500">Giờ ra:</span> {formatDateTime24(checkoutPreview.check_out_time)}</div>
+                    <div><span className="text-ink-muted">Mã vé:</span> <strong className="font-mono text-ink">{checkoutPreview.ticket_code}</strong></div>
+                    <div><span className="text-ink-muted">Biển số:</span> <strong className="font-mono text-primary-500">{checkoutPreview.license_plate}</strong></div>
+                    <div><span className="text-ink-muted">Loại xe:</span> <span className="text-ink">{checkoutPreview.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
+                    <div><span className="text-ink-muted">Vị trí:</span> <strong className="text-amber-600">{checkoutPreview.slot_code}</strong></div>
+                    <div className="col-span-2"><span className="text-ink-muted">Giờ vào:</span> <span className="text-ink">{formatDateTime24(checkoutPreview.check_in_time)}</span></div>
+                    <div className="col-span-2"><span className="text-ink-muted">Giờ ra:</span> <span className="text-ink">{formatDateTime24(checkoutPreview.check_out_time)}</span></div>
                   </div>
 
-                  <div className="border-t border-slate-800 pt-4 space-y-2">
+                  <div className="border-t border-slate-200 pt-4 space-y-2">
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Tổng thời gian</span>
-                      <strong>{checkoutPreview.total_hours} giờ</strong>
+                      <span className="text-ink-muted">Tổng thời gian</span>
+                      <strong className="text-ink">{checkoutPreview.total_hours} giờ</strong>
                     </div>
                     <div className="flex justify-between text-sm">
-                      <span className="text-slate-400">Đơn giá</span>
-                      <span>{parseInt(checkoutPreview.hourly_rate).toLocaleString('vi-VN')}đ / giờ</span>
+                      <span className="text-ink-muted">Đơn giá</span>
+                      <span className="text-ink">{parseInt(checkoutPreview.hourly_rate).toLocaleString('vi-VN')}đ / giờ</span>
                     </div>
-                    <div className="flex justify-between text-lg font-black text-rose-400">
+                    <div className="flex justify-between text-lg font-black text-rose-600">
                       <span>Phí gửi xe</span>
                       <span>{parseInt(checkoutPreview.total_amount).toLocaleString('vi-VN')} VNĐ</span>
                     </div>
@@ -504,39 +504,39 @@ export default function StaffDashboard() {
                 </div>
               ) : (
                 <>
-              <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Bước 1 — Tìm vé đang đỗ</h3>
+              <h3 className="font-bold text-ink-muted text-sm uppercase tracking-wider">Bước 1 — Tìm vé đang đỗ</h3>
               {searchResults.activeSessions.length === 0 ? (
-                <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-500">
-                  <Car className="w-12 h-12 mx-auto mb-3 text-slate-700" />
+                <div className="p-12 text-center bg-slate-50 border border-slate-200 rounded-2xl text-ink-muted">
+                  <Car className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm">Nhập biển số hoặc mã vé ở thanh tìm kiếm phía trên để hiển thị thông tin tính tiền.</p>
                 </div>
               ) : (
                 searchResults.activeSessions.map((session) => (
-                  <div key={session.session_id} className="bg-slate-900 border border-slate-800 p-6 rounded-2xl hover:border-slate-700 transition-all flex flex-col gap-4">
+                  <div key={session.session_id} className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl hover:border-slate-300 transition-all flex flex-col gap-4">
                     <div className="flex flex-col md:flex-row justify-between items-start gap-4">
                       <div className="flex-1">
                         <div className="flex items-center gap-2.5 mb-2">
-                          <span className="bg-slate-800 text-xs px-2.5 py-1 rounded-full font-mono text-slate-300 font-semibold border border-slate-700">{session.ticket_code}</span>
-                          <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/20 uppercase">Đang đỗ xe</span>
+                          <span className="bg-slate-100 text-xs px-2.5 py-1 rounded-full font-mono text-ink-muted font-semibold border border-slate-200">{session.ticket_code}</span>
+                          <span className="bg-emerald-500/10 text-emerald-600 text-[10px] px-2 py-0.5 rounded-full font-bold border border-emerald-500/20 uppercase">Đang đỗ xe</span>
                         </div>
                         <div className="grid grid-cols-2 gap-x-8 gap-y-1.5 mt-4 text-sm">
-                          <div><span className="text-slate-400">Chủ xe:</span> <strong className="text-slate-200">{formatCustomerName(session)}</strong></div>
-                          <div><span className="text-slate-400">Số điện thoại:</span> <span className="text-slate-300">{formatCustomerPhone(session)}</span></div>
-                          <div><span className="text-slate-400">Biển số:</span> <strong className="text-primary-400 font-mono">{session.license_plate}</strong></div>
-                          <div><span className="text-slate-400">Loại xe:</span> <span className="capitalize text-slate-300">{session.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
-                          <div><span className="text-slate-400">Vị trí đỗ:</span> <strong className="text-yellow-400">{session.slot_code}</strong></div>
-                          <div><span className="text-slate-400">Giờ vào bãi:</span> <span className="text-slate-300">{formatDateTime24(session.check_in_time)}</span></div>
+                          <div><span className="text-ink-muted">Chủ xe:</span> <strong className="text-ink">{formatCustomerName(session)}</strong></div>
+                          <div><span className="text-ink-muted">Số điện thoại:</span> <span className="text-ink-muted">{formatCustomerPhone(session)}</span></div>
+                          <div><span className="text-ink-muted">Biển số:</span> <strong className="text-primary-500 font-mono">{session.license_plate}</strong></div>
+                          <div><span className="text-ink-muted">Loại xe:</span> <span className="capitalize text-ink-muted">{session.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span></div>
+                          <div><span className="text-ink-muted">Vị trí đỗ:</span> <strong className="text-amber-600">{session.slot_code}</strong></div>
+                          <div><span className="text-ink-muted">Giờ vào bãi:</span> <span className="text-ink-muted">{formatDateTime24(session.check_in_time)}</span></div>
                         </div>
                         {assetUrl(session.vehicle_photo_url) && (
                           <img
                             src={assetUrl(session.vehicle_photo_url)!}
                             alt="Xe"
-                            className="mt-3 w-full max-h-32 object-cover rounded-lg border border-slate-800"
+                            className="mt-3 w-full max-h-32 object-cover rounded-lg border border-slate-200"
                           />
                         )}
                       </div>
                       <div className="w-full md:w-72 space-y-2">
-                        <label className="block text-[10px] uppercase tracking-wider font-bold text-slate-500">
+                        <label className="block text-[10px] uppercase tracking-wider font-bold text-ink-muted">
                           Giờ check-out
                         </label>
                         <DateTimeInput24
@@ -550,16 +550,16 @@ export default function StaffDashboard() {
                         <button
                           type="button"
                           onClick={() => useNowForCheckOut(session.session_id, session.check_in_time)}
-                          className="w-full text-xs font-semibold text-primary-300 hover:text-primary-200 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/15 rounded-lg py-2 transition-colors"
+                          className="w-full text-xs font-semibold text-primary-500 hover:text-primary-600 border border-primary-500/30 bg-primary-500/10 hover:bg-primary-500/20 rounded-lg py-2 transition-colors"
                         >
                           Dùng giờ ra hợp lệ
                         </button>
                         {new Date(session.check_in_time) > new Date() && (
-                          <p className="text-amber-400 text-xs leading-relaxed">
+                          <p className="text-amber-600 text-xs leading-relaxed">
                             Giờ vào bãi đang ở tương lai — hãy chỉnh giờ ra sau giờ vào trước khi tính phí.
                           </p>
                         )}
-                        <p className="text-amber-400 text-xs leading-relaxed">
+                        <p className="text-amber-600 text-xs leading-relaxed">
                           Giờ ra phải sau giờ vào bãi ({formatDateTime24(session.check_in_time)}).
                         </p>
                       </div>
@@ -584,40 +584,40 @@ export default function StaffDashboard() {
           {activeTab === 'logs' && (
             <div className="space-y-4">
               <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-                <h3 className="font-bold text-slate-400 text-sm uppercase tracking-wider">Nhật ký ra vào</h3>
-                <p className="text-xs text-slate-500">
-                  <span className="text-slate-400">Trang {logPagination.page}</span>
+                <h3 className="font-bold text-ink-muted text-sm uppercase tracking-wider">Nhật ký ra vào</h3>
+                <p className="text-xs text-ink-muted">
+                  <span className="text-ink-muted">Trang {logPagination.page}</span>
                   {' · '}
-                  <span className="text-primary-300/90 font-medium">
+                  <span className="text-primary-500 font-medium">
                     {logPagination.rangeStart}–{logPagination.rangeEnd}
                   </span>
                   {' / '}
-                  <span className="text-primary-300/90 font-medium">{logPagination.total}</span>
+                  <span className="text-primary-500 font-medium">{logPagination.total}</span>
                   {' lượt ra vào'}
                   {logCounterSuffix}
                 </p>
               </div>
 
-              <div className="glass-morphism border border-slate-800 p-4 rounded-2xl space-y-4">
+              <div className="bg-white border border-slate-200 shadow-sm p-4 rounded-2xl space-y-4">
                 <form onSubmit={handleLogSearch} className="flex gap-3">
                   <input
                     type="text"
                     placeholder="Tìm mã vé, biển số, vị trí..."
                     value={logSearch}
                     onChange={(e) => setLogSearch(e.target.value)}
-                    className="flex-1 px-4 py-2.5 rounded-xl bg-slate-900 border border-slate-800 text-white text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
+                    className="flex-1 px-4 py-2.5 rounded-xl bg-white border border-slate-200 text-ink text-sm focus:outline-none focus:ring-1 focus:ring-primary-500"
                   />
                   <button
                     type="submit"
                     disabled={logsLoading}
-                    className="bg-primary-600 hover:bg-primary-700 px-5 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50"
+                    className="bg-primary-600 hover:bg-primary-700 px-5 py-2.5 rounded-xl font-bold text-sm disabled:opacity-50 text-white"
                   >
                     Tìm
                   </button>
                 </form>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Thời gian</span>
+                  <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Thời gian</span>
                   {([
                     ['today', 'Hôm nay'],
                     ['7d', '7 ngày'],
@@ -630,7 +630,7 @@ export default function StaffDashboard() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Loại khách</span>
+                  <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Loại khách</span>
                   {([
                     ['all', 'Tất cả'],
                     ['walkin', 'Khách vãng lai'],
@@ -644,7 +644,7 @@ export default function StaffDashboard() {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  <span className="text-[10px] uppercase tracking-wider text-slate-500 font-bold self-center mr-1">Trạng thái</span>
+                  <span className="text-[10px] uppercase tracking-wider text-ink-muted font-bold self-center mr-1">Trạng thái</span>
                   {([
                     ['all', 'Tất cả'],
                     ['active', 'Trong bãi'],
@@ -655,7 +655,7 @@ export default function StaffDashboard() {
                     </button>
                   ))}
                   {(logSearch || logStatus !== 'all' || logCustomerType !== 'all' || logPreset !== 'today') && (
-                    <button type="button" onClick={clearLogFilters} className="text-xs text-slate-400 hover:text-primary-300 ml-1">
+                    <button type="button" onClick={clearLogFilters} className="text-xs text-ink-muted hover:text-primary-500 ml-1">
                       Xóa bộ lọc
                     </button>
                   )}
@@ -663,17 +663,17 @@ export default function StaffDashboard() {
               </div>
 
               {logsLoading ? (
-                <div className="p-12 text-center text-slate-500">Đang tải nhật ký...</div>
+                <div className="p-12 text-center text-ink-muted">Đang tải nhật ký...</div>
               ) : dailyLogs.length === 0 ? (
-                <div className="p-12 text-center bg-slate-900/40 border border-slate-800 rounded-2xl text-slate-500">
-                  <FileText className="w-12 h-12 mx-auto mb-3 text-slate-700" />
+                <div className="p-12 text-center bg-slate-50 border border-slate-200 rounded-2xl text-ink-muted">
+                  <FileText className="w-12 h-12 mx-auto mb-3 text-slate-300" />
                   <p className="text-sm">Không có lượt xe phù hợp bộ lọc.</p>
                 </div>
               ) : (
-                <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden">
+                <div className="bg-white border border-slate-200 shadow-sm rounded-2xl overflow-hidden">
                   <div className="overflow-x-auto">
-                    <table className="w-full text-left text-sm text-slate-300 border-collapse">
-                      <thead className="bg-slate-950 text-slate-400 text-xs uppercase font-semibold border-b border-slate-800">
+                    <table className="w-full text-left text-sm text-ink border-collapse">
+                      <thead className="bg-slate-50 text-ink-muted text-xs uppercase font-semibold border-b border-slate-200">
                         <tr>
                           <th className="p-4">Mã Vé</th>
                           <th className="p-4">Biển Số / Loại</th>
@@ -685,30 +685,30 @@ export default function StaffDashboard() {
                           <th className="p-4">Trạng Thái</th>
                         </tr>
                       </thead>
-                      <tbody className="divide-y divide-slate-800">
+                      <tbody className="divide-y divide-slate-200">
                         {logPagination.items.map((log) => (
-                          <tr key={log.id} className="hover:bg-slate-800/30 transition-colors">
-                            <td className="p-4 font-mono text-xs">{log.ticket_code}</td>
+                          <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                            <td className="p-4 font-mono text-xs text-ink">{log.ticket_code}</td>
                             <td className="p-4">
-                              <span className="font-semibold text-slate-100 block font-mono">{log.license_plate}</span>
-                              <span className="text-xs text-slate-400 capitalize">{log.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
+                              <span className="font-semibold text-ink block font-mono">{log.license_plate}</span>
+                              <span className="text-xs text-ink-muted capitalize">{log.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
                             </td>
-                            <td className="p-4 text-xs text-slate-400">
+                            <td className="p-4 text-xs text-ink-muted">
                               {getCustomerTypeLabel(log.customer_type ?? resolveCustomerType(log))}
                             </td>
-                            <td className="p-4 font-bold text-slate-200">{log.slot_code}</td>
-                            <td className="p-4 text-xs text-blue-400">{formatLogDateTime(log.check_in_time)}</td>
-                            <td className="p-4 text-xs text-emerald-400">{formatLogDateTime(log.check_out_time)}</td>
-                            <td className={`p-4 font-bold ${log.total_amount && Number(log.total_amount) > 0 ? 'text-amber-300' : 'text-slate-500'}`}>
+                            <td className="p-4 font-bold text-ink">{log.slot_code}</td>
+                            <td className="p-4 text-xs text-primary-500">{formatLogDateTime(log.check_in_time)}</td>
+                            <td className="p-4 text-xs text-emerald-600">{formatLogDateTime(log.check_out_time)}</td>
+                            <td className={`p-4 font-bold ${log.total_amount && Number(log.total_amount) > 0 ? 'text-amber-600' : 'text-ink-muted'}`}>
                               {log.total_amount && Number(log.total_amount) > 0
                                 ? `${parseInt(log.total_amount).toLocaleString('vi-VN')}đ`
                                 : '—'}
                             </td>
                             <td className="p-4">
                               {log.status === 'active' ? (
-                                <span className="bg-emerald-500/10 text-emerald-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-500/20 uppercase">Trong bãi</span>
+                                <span className="bg-emerald-500/10 text-emerald-600 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-500/20 uppercase">Trong bãi</span>
                               ) : (
-                                <span className="bg-indigo-500/10 text-indigo-400 text-[10px] px-2.5 py-1 rounded-full font-bold border border-indigo-500/25 uppercase">Hoàn thành</span>
+                                <span className="bg-primary-500/10 text-primary-500 text-[10px] px-2.5 py-1 rounded-full font-bold border border-primary-500/25 uppercase">Hoàn thành</span>
                               )}
                             </td>
                           </tr>
@@ -733,42 +733,42 @@ export default function StaffDashboard() {
         <div className="space-y-6">
           
           {/* Quick guide card */}
-          <div className="glass-morphism border border-slate-800 p-6 rounded-2xl bg-gradient-to-b from-slate-900 to-indigo-950/40">
-            <h3 className="font-bold text-lg mb-4 flex items-center gap-2">
-              <ClipboardList className="w-5 h-5 text-indigo-400" />
+          <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+            <h3 className="font-bold text-lg mb-4 flex items-center gap-2 text-ink">
+              <ClipboardList className="w-5 h-5 text-primary-500" />
               Hướng dẫn nhanh
             </h3>
-            <ul className="space-y-3.5 text-sm text-slate-300">
+            <ul className="space-y-3.5 text-sm text-ink-muted">
               <li className="flex gap-2">
-                <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">1</span>
-                <span><strong>Đặt chỗ:</strong> quét QR RES hoặc tìm mã → check-in. <strong>Walk-in:</strong> nhập biển số, chọn slot, tạo vé TICKET.</span>
+                <span className="w-5 h-5 bg-primary-500/10 border border-primary-500/20 rounded-full flex items-center justify-center text-xs font-bold text-primary-500 flex-shrink-0">1</span>
+                <span><strong className="text-ink">Đặt chỗ:</strong> quét QR RES hoặc tìm mã → check-in. <strong className="text-ink">Walk-in:</strong> nhập biển số, chọn slot, tạo vé TICKET.</span>
               </li>
               <li className="flex gap-2">
-                <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">2</span>
+                <span className="w-5 h-5 bg-primary-500/10 border border-primary-500/20 rounded-full flex items-center justify-center text-xs font-bold text-primary-500 flex-shrink-0">2</span>
                 <span>Quét QR trên điện thoại khách bằng camera laptop (bật quyền camera trình duyệt).</span>
               </li>
               <li className="flex gap-2">
-                <span className="w-5 h-5 bg-indigo-900/60 border border-indigo-700/50 rounded-full flex items-center justify-center text-xs font-bold text-indigo-200">3</span>
-                <span>Check-out: tìm/quét TICKET → <strong>Tính phí</strong> → <strong>Xác nhận thanh toán</strong> (tiền mặt).</span>
+                <span className="w-5 h-5 bg-primary-500/10 border border-primary-500/20 rounded-full flex items-center justify-center text-xs font-bold text-primary-500 flex-shrink-0">3</span>
+                <span>Check-out: tìm/quét TICKET → <strong className="text-ink">Tính phí</strong> → <strong className="text-ink">Xác nhận thanh toán</strong> (tiền mặt).</span>
               </li>
             </ul>
           </div>
 
           {/* Quick Stats overview */}
-          <div className="bg-slate-900 border border-slate-800 p-6 rounded-2xl">
-            <h3 className="font-bold mb-4 text-slate-400 text-sm uppercase tracking-wider">Trạng thái thời gian thực</h3>
+          <div className="bg-white border border-slate-200 shadow-sm p-6 rounded-2xl">
+            <h3 className="font-bold mb-4 text-ink-muted text-sm uppercase tracking-wider">Trạng thái thời gian thực</h3>
             <div className="space-y-4">
-              <div className="flex justify-between items-center p-3.5 bg-slate-950 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-sm">Vị trí xe máy</span>
-                <span className="text-sm font-semibold text-primary-400">Tầng 1</span>
+              <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-ink-muted text-sm">Vị trí xe máy</span>
+                <span className="text-sm font-semibold text-primary-500">Tầng 1</span>
               </div>
-              <div className="flex justify-between items-center p-3.5 bg-slate-950 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-sm">Vị trí ô tô</span>
-                <span className="text-sm font-semibold text-primary-400">Tầng 2</span>
+              <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-ink-muted text-sm">Vị trí ô tô</span>
+                <span className="text-sm font-semibold text-primary-500">Tầng 2</span>
               </div>
-              <div className="flex justify-between items-center p-3.5 bg-slate-950 rounded-xl border border-slate-800">
-                <span className="text-slate-400 text-sm">Phương thức trả</span>
-                <span className="text-sm font-bold text-slate-200">Tiền mặt (Staff thu)</span>
+              <div className="flex justify-between items-center p-3.5 bg-slate-50 rounded-xl border border-slate-200">
+                <span className="text-ink-muted text-sm">Phương thức trả</span>
+                <span className="text-sm font-bold text-ink">Tiền mặt (Staff thu)</span>
               </div>
             </div>
           </div>
@@ -780,10 +780,10 @@ export default function StaffDashboard() {
       {/* Invoice Modal for Checkout */}
       {selectedSession && checkoutDetail && (
         <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="bg-slate-900 border border-slate-800 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative text-white">
+          <div className="bg-white border border-slate-200 w-full max-w-md rounded-2xl overflow-hidden shadow-2xl relative text-ink">
             
-            <div className="bg-slate-950 p-6 border-b border-slate-850 flex justify-between items-center">
-              <h3 className="text-lg font-bold flex items-center gap-2 text-rose-500">
+            <div className="bg-slate-50 p-6 border-b border-slate-200 flex justify-between items-center">
+              <h3 className="text-lg font-bold flex items-center gap-2 text-rose-600">
                 <LogOut className="w-5 h-5" />
                 Hóa đơn thanh toán
               </h3>
@@ -793,7 +793,7 @@ export default function StaffDashboard() {
                   setCheckoutDetail(null);
                   setConfirmedCheckOutTime(null);
                 }}
-                className="text-slate-400 hover:text-white"
+                className="text-ink-muted hover:text-ink"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -801,49 +801,49 @@ export default function StaffDashboard() {
 
             <div className="p-6 space-y-6">
               <div className="text-center">
-                <div className="bg-rose-500/10 text-rose-500 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
+                <div className="bg-rose-500/10 text-rose-600 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 border border-rose-500/20">
                   <CheckCircle className="w-8 h-8" />
                 </div>
-                <h4 className="text-2xl font-black text-rose-400">
+                <h4 className="text-2xl font-black text-rose-600">
                   {parseInt(checkoutDetail.total_amount.toString()).toLocaleString('vi-VN')} VNĐ
                 </h4>
-                <p className="text-xs text-slate-400 mt-1">Vui lòng thu tiền mặt từ tài xế</p>
+                <p className="text-xs text-ink-muted mt-1">Vui lòng thu tiền mặt từ tài xế</p>
               </div>
 
-              <div className="border-t border-b border-slate-800 py-4 space-y-2.5 text-sm">
+              <div className="border-t border-b border-slate-200 py-4 space-y-2.5 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Mã vé:</span>
-                  <strong className="font-mono text-slate-100">{selectedSession.ticket_code}</strong>
+                  <span className="text-ink-muted">Mã vé:</span>
+                  <strong className="font-mono text-ink">{selectedSession.ticket_code}</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Biển số xe:</span>
-                  <strong className="font-mono text-slate-100">{selectedSession.license_plate}</strong>
+                  <span className="text-ink-muted">Biển số xe:</span>
+                  <strong className="font-mono text-ink">{selectedSession.license_plate}</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Loại xe:</span>
-                  <span className="capitalize text-slate-200">{selectedSession.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
+                  <span className="text-ink-muted">Loại xe:</span>
+                  <span className="capitalize text-ink-muted">{selectedSession.vehicle_type === 'car' ? 'Ô tô' : 'Xe máy'}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Mã vị trí đỗ:</span>
-                  <strong className="text-yellow-400">{selectedSession.slot_code}</strong>
+                  <span className="text-ink-muted">Mã vị trí đỗ:</span>
+                  <strong className="text-amber-600">{selectedSession.slot_code}</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Giờ vào bãi:</span>
-                  <span className="text-slate-300">{formatDateTime24(selectedSession.check_in_time)}</span>
+                  <span className="text-ink-muted">Giờ vào bãi:</span>
+                  <span className="text-ink-muted">{formatDateTime24(selectedSession.check_in_time)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Giờ ra bãi:</span>
-                  <span className="text-slate-300">
+                  <span className="text-ink-muted">Giờ ra bãi:</span>
+                  <span className="text-ink-muted">
                     {confirmedCheckOutTime ? formatDateTime24(confirmedCheckOutTime) : '—'}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Tổng thời gian:</span>
-                  <strong className="text-slate-100">{checkoutDetail.total_hours} giờ</strong>
+                  <span className="text-ink-muted">Tổng thời gian:</span>
+                  <strong className="text-ink">{checkoutDetail.total_hours} giờ</strong>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-slate-400">Đơn giá:</span>
-                  <span className="text-slate-200">{parseInt(checkoutDetail.hourly_rate.toString()).toLocaleString('vi-VN')}đ / giờ</span>
+                  <span className="text-ink-muted">Đơn giá:</span>
+                  <span className="text-ink-muted">{parseInt(checkoutDetail.hourly_rate.toString()).toLocaleString('vi-VN')}đ / giờ</span>
                 </div>
               </div>
 
@@ -855,7 +855,7 @@ export default function StaffDashboard() {
                     setConfirmedCheckOutTime(null);
                     if (activeTab === 'logs') fetchDailyLogs();
                   }}
-                  className="w-full bg-slate-800 hover:bg-slate-700 font-bold py-3 rounded-xl transition-all active:scale-95 text-sm"
+                  className="w-full bg-slate-100 hover:bg-slate-200 text-ink font-bold py-3 rounded-xl transition-all active:scale-95 text-sm"
                 >
                   Đóng & Hoàn tất
                 </button>
